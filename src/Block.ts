@@ -1,3 +1,5 @@
+import Theme from "./Theme";
+
 export default class Block 
 {
   static next_id = 0;
@@ -8,7 +10,6 @@ export default class Block
   width: number;
   height: number;
   fontFamily: string;
-  fontSize: number;
   paddingTop: number;
   paddingLeft: number;
 
@@ -21,7 +22,6 @@ export default class Block
     this.width = width;
     this.height = height;
     this.fontFamily = "Menlo";
-    this.fontSize = 14;
     this.paddingTop = 10;
     this.paddingLeft = 10;
   }
@@ -47,8 +47,9 @@ export default class Block
         firstText = text;
       }
 
-      text.setAttribute("font-family", "Menlo");
-      text.setAttribute("font-size", "14");
+      text.setAttribute("font-family", Theme.blockFontFamily);
+      text.setAttribute("font-size", Theme.blockFontSize);
+      text.setAttribute("fill", Theme.blockFontColor);
       text.textContent = line;
 
       text.setAttribute("x", textX.toString());
@@ -75,9 +76,9 @@ export default class Block
     let block = document.createElementNS("http://www.w3.org/2000/svg", "rect");
     block.setAttribute("width", this.width.toString());
     block.setAttribute("height", this.height.toString());
-    block.setAttribute("fill", "#ffffff");
-    block.setAttribute("stroke", "#000000");
-    block.setAttribute("stroke-width", "1");
+    block.setAttribute("fill", Theme.blockBackgroundColor);
+    block.setAttribute("stroke", Theme.blockBorderColor);
+    block.setAttribute("stroke-width", Theme.blockBorderSize);
     group.prepend(block);
   }
 

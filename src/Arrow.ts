@@ -1,4 +1,5 @@
 import Block from "./Block";
+import Theme from "./Theme";
 
 export default class Arrow
 {
@@ -12,7 +13,7 @@ export default class Arrow
   nbInput: number;
   color: string;
 
-  constructor(blockA: Block, blockB: Block, currentOutput=0, nbOutput=0, currentInput=0, nbInput=0, color="black") 
+  constructor(blockA: Block, blockB: Block, currentOutput=0, nbOutput=0, currentInput=0, nbInput=0, color="") 
   {
     this.id = Arrow.next_id++;
     this.blockA = blockA;
@@ -21,6 +22,10 @@ export default class Arrow
     this.nbOutput = nbOutput;
     this.currentInput = currentInput;
     this.nbInput = nbInput;
+
+    if (color == "") {
+      color = Theme.arrowColor;
+    }
     this.color = color;
   }
 
@@ -69,7 +74,7 @@ export default class Arrow
       inputPos = this.currentInput/(this.nbInput-1);
     }
 
-    if (this.blockB.y >= this.blockA.y) {
+    if (this.blockB.y >= this.blockA.y + this.blockA.height) {
       // BlockB is after BlockA      
       x  = this.blockA.x + this.blockA.width/3 + outputPos*(this.blockA.width/3);
       y  = this.blockA.y + this.blockA.height;
@@ -82,22 +87,17 @@ export default class Arrow
       x  = this.blockA.x + this.blockA.width/3 + outputPos*(this.blockA.width/3);
       y  = this.blockA.y + this.blockA.height;
       x2 = x;
-      y2 = y + 20 + this.currentOutput*10;
+      y2 = y + 10 + this.currentOutput*10;
       group.appendChild(this.createLine(x, y, x2, y2));
 
       x  = x2;
       y  = y2;
-      x2 = Math.max(this.blockA.x+this.blockA.width, this.blockB.x+this.blockB.width) + 50;
+      x2 = Math.max(this.blockA.x+this.blockA.width, this.blockB.x+this.blockB.width) + 20 + this.currentInput*10; 
       group.appendChild(this.createLine(x, y, x2, y2));
 
       x  = x2;
       y  = y2;
-      y2 = this.blockB.y + this.blockB.height/2;
-      group.appendChild(this.createLine(x, y, x2, y2));
-
-      x  = x2;
-      y  = y2;
-      y2 = this.blockB.y - 20;
+      y2 = this.blockB.y - 20 - this.currentInput*10; ;
       group.appendChild(this.createLine(x, y, x2, y2));
 
       x  = x2;

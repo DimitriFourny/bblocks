@@ -1,5 +1,6 @@
 import Block from "./Block";
 import Arrow from "./Arrow";
+import Theme from "./Theme";
 
 
 export default class Context 
@@ -7,6 +8,7 @@ export default class Context
   blocksLines: Array<Array<string>>;
   links: Array<Array<number|string>>;
   blocks: Array<Block>;
+  arrows: Array<Arrow>;
   elementMoving: HTMLElement | null;
   
   constructor(blocksLines: Array<Array<string>>, links: Array<Array<number|string>>)
@@ -14,6 +16,7 @@ export default class Context
     this.blocksLines = blocksLines;
     this.links = links;
     this.blocks = [];
+    this.arrows = [];
     this.elementMoving = null;
   }
 
@@ -67,7 +70,7 @@ export default class Context
     this.links.forEach((link) => {
       const output_id = <number>link[0];
       const input_id = <number>link[1];
-      let color = "black";
+      let color = Theme.arrowColor;
       if (link.length > 2) {
         color = <string>link[2];
       }
@@ -92,6 +95,8 @@ export default class Context
 
       arrow_elem.onmouseenter = this.onMouseEnterLine.bind(this);
       arrow_elem.onmouseleave = this.onMouseLeaveLine.bind(this);
+
+      this.arrows.push(arrow);
     });
   }
 
@@ -110,10 +115,12 @@ export default class Context
     svg.setAttribute("width", imgWidth.toString());
     svg.setAttribute("height", imgHeight.toString());
 
+    document.body.style.background = Theme.svgBackgroundColor;
+
     let background = document.createElementNS("http://www.w3.org/2000/svg", "rect");
     background.setAttribute("width", "100%");
     background.setAttribute("height", "100%");
-    background.setAttribute("fill", "#ddffff");
+    background.setAttribute("fill", Theme.svgBackgroundColor);
     svg.appendChild(background);
 
     const marginBottomBlocks = 40;
@@ -182,13 +189,13 @@ export default class Context
   onMouseEnterBlock(event: MouseEvent) 
   {
     let target = <HTMLElement> event.currentTarget;
-    target.children[0].setAttribute("fill", "#ffffdd");
+    target.children[0].setAttribute("fill", Theme.blockOverBackgroundColor);
   }
 
   onMouseLeaveBlock(event: MouseEvent) 
   {
     let target = <HTMLElement> event.currentTarget;
-    target.children[0].setAttribute("fill", "#ffffff");
+    target.children[0].setAttribute("fill", Theme.blockBackgroundColor);
   }
 
   onMouseEnterLine(event: MouseEvent) 
@@ -197,10 +204,10 @@ export default class Context
 
     for (let i = 0; i < target.children.length; i++) {
       if (target.children[i].tagName == "line") {
-        target.children[i].setAttribute("stroke", "#0000ff");
-        target.children[i].setAttribute("stroke-width", "2");
+        target.children[i].setAttribute("stroke", Theme.arrowOverColor);
+        target.children[i].setAttribute("stroke-width", Theme.arrowOverSize);
       } else {
-        target.children[i].setAttribute("fill", "#0000ff");
+        target.children[i].setAttribute("fill", Theme.arrowOverColor);
       }
     };
   }
@@ -209,12 +216,15 @@ export default class Context
   {
     let target = <HTMLElement> event.currentTarget;
 
+    const arrowId = parseInt(target.id.substring(1));
+    const arrow = this.arrows[arrowId];
+
     for (let i = 0; i < target.children.length; i++) {
       if (target.children[i].tagName == "line") {
-        target.children[i].setAttribute("stroke", "#000000");
+        target.children[i].setAttribute("stroke", arrow.color);
         target.children[i].setAttribute("stroke-width", "1");
       } else {
-        target.children[i].setAttribute("fill", "#000000");
+        target.children[i].setAttribute("fill", arrow.color);
       }
     };
   } 
