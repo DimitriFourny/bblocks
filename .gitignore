@@ -1,2 +1,8 @@
+dist/*
+
+# MacOS stuff
 .DS_Store
-build/*
+
+# NPM stuff
+node_modules
+package-lock.json
