@@ -1,1 +1,3 @@
-# graphblocks
+# BBlocks
+
+To build, just run `tsc`.

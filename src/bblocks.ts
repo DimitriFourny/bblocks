@@ -9,12 +9,20 @@ import Theme from "./Theme";
 
 
 let blocksLines = [
-  ["xor ecx, ecx", "jmp 0x41414141"],
-  ["push ebp", "mov ebp, esp", "je next", "jmp begin"],
-  ["next:", "inc eax", "end"],
-  ["mul eax, 5", "loop"],
+  ["Block A", "begin"],
+  ["Block B"],
+  ["Block C"],
+  ["Block D"],
+  ["Block E", "end"],
 ];
-let links = [[0, 1], [1, 2, Theme.arrowValidColor], [1, 0, Theme.arrowInvalidColor], [3, 0]]; 
+let links = [
+  [0, 1], 
+  [1, 2, Theme.arrowValidColor], 
+  [1, 0, Theme.arrowInvalidColor], 
+  [2, 3],
+  [2, 4],
+  [3, 0]
+]; 
 
 let context = new Context(blocksLines, links);
 context.draw();
