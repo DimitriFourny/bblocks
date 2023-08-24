@@ -141,9 +141,10 @@ export default class Context
         return;
       }
 
-      block_elem.onmouseenter = this.onMouseEnterBlock.bind(this);
-      block_elem.onmouseleave = this.onMouseLeaveBlock.bind(this);
-      block_elem.onclick = this.onClickBlock.bind(this);
+      block_elem.onmousedown = this.onMouseDownBlock.bind(this); 
+      block_elem.onmouseup = this.onMouseUpBlock.bind(this); 
+      block_elem.onmouseenter = this.onMouseEnterBlock.bind(this); 
+      block_elem.onmouseleave = this.onMouseLeaveBlock.bind(this); 
 
       this.blocks.push(block);
       posY += block.height + marginBottomBlocks;
@@ -154,8 +155,8 @@ export default class Context
     this.drawArrows();
   }
 
-  // Moving blocks by clicking on it
-  onClickBlock(event: MouseEvent) 
+  /** The drag and drop on a block is starting */
+  onMouseDownBlock(event: MouseEvent) 
   {
     if (!this.elementMoving) {
       this.elementMoving = <HTMLElement> event.currentTarget;
@@ -164,6 +165,13 @@ export default class Context
     }
   }
 
+  /** The drag and drop on a block is finishing */
+  onMouseUpBlock(event: MouseEvent) 
+  {
+    this.elementMoving = null;
+  }
+
+  /** The mouse is moving inside the SVG */
   onMouseMoveSvg(event: MouseEvent) 
   {
     if (!this.elementMoving) {
@@ -175,29 +183,33 @@ export default class Context
       return;
     }
 
+    // Calculate the position of the mouse in the SVG
     let bounds = svg.getBoundingClientRect();
     let x = event.clientX - bounds.left;
     let y = event.clientY - bounds.top;
 
+    // Update the block position and the arrows
     const blockId = parseInt(this.elementMoving.id.substring(1));
     const block = this.blocks[blockId];
     block.updatePosition(x - block.width/2, y - block.height/2);
     this.drawArrows();
   }
 
-  // Change colors when moving pointers on a block or arrow
+  /** The mouse is on a block */
   onMouseEnterBlock(event: MouseEvent) 
   {
     let target = <HTMLElement> event.currentTarget;
     target.children[0].setAttribute("fill", Theme.blockOverBackgroundColor);
   }
 
+  /** The mouse is not anymore on a block */
   onMouseLeaveBlock(event: MouseEvent) 
   {
     let target = <HTMLElement> event.currentTarget;
     target.children[0].setAttribute("fill", Theme.blockBackgroundColor);
   }
 
+  /** The mouse is on a line */
   onMouseEnterLine(event: MouseEvent) 
   {
     let target = <HTMLElement> event.currentTarget;
@@ -212,6 +224,7 @@ export default class Context
     };
   }
 
+  /** The mouse is not anymore on a line */
   onMouseLeaveLine(event: MouseEvent) 
   {
     let target = <HTMLElement> event.currentTarget;
