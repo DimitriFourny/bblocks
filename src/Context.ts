@@ -117,10 +117,27 @@ export default class Context
 
     document.body.style.background = Theme.svgBackgroundColor;
 
+    let bg_pattern = document.createElementNS("http://www.w3.org/2000/svg", "pattern");
+    bg_pattern.setAttribute("id", "p1");
+    bg_pattern.setAttribute("x", "5");
+    bg_pattern.setAttribute("y", "21.5");
+    bg_pattern.setAttribute("width", "32");
+    bg_pattern.setAttribute("height", "32");
+    bg_pattern.setAttribute("patternUnits", "userSpaceOnUse");
+    svg.appendChild(bg_pattern); 
+    
+    let bg_circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    bg_circle.setAttribute("cx", "1");
+    bg_circle.setAttribute("cy", "1");
+    bg_circle.setAttribute("r", "1");
+    bg_circle.setAttribute("fill", "#aaa");
+    bg_pattern.appendChild(bg_circle); 
+
     let background = document.createElementNS("http://www.w3.org/2000/svg", "rect");
     background.setAttribute("width", "100%");
     background.setAttribute("height", "100%");
-    background.setAttribute("fill", Theme.svgBackgroundColor);
+    // background.setAttribute("fill", Theme.svgBackgroundColor);
+    background.setAttribute("fill", "url(#p1)");
     svg.appendChild(background);
 
     const marginBottomBlocks = 40;

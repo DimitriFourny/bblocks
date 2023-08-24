@@ -1,13 +1,13 @@
 
 export default class Theme 
 {
-  static svgBackgroundColor = "#1E2327";
+  static svgBackgroundColor = "#fff";
 
-  static blockBackgroundColor = "#171C23";
-  static blockOverBackgroundColor = "#352D33";
+  static blockBackgroundColor = "#fff";
+  static blockOverBackgroundColor = "#f1f1f1";
   static blockBorderColor = "#46484A";
-  static blockBorderSize = "1";
-  static blockFontColor = "#E0E3E7";
+  static blockBorderSize = "2";
+  static blockFontColor = "#000";
   static blockFontFamily = "Menlo";
   static blockFontSize = "14";
 
