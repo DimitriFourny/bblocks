@@ -19,7 +19,7 @@ export default class Context
     this.arrows = [];
     this.elementMoving = null;
   }
-
+  
   getSVG() :SVGElement|null 
   {
     return <SVGElement|null> document.getElementById("svg");
@@ -134,9 +134,8 @@ export default class Context
     bg_pattern.appendChild(bg_circle); 
 
     let background = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-    background.setAttribute("width", "100%");
-    background.setAttribute("height", "100%");
-    // background.setAttribute("fill", Theme.svgBackgroundColor);
+    background.setAttribute("width", imgWidth.toString());
+    background.setAttribute("height", imgHeight.toString());
     background.setAttribute("fill", "url(#p1)");
     svg.appendChild(background);
 
@@ -168,6 +167,7 @@ export default class Context
     });
 
     svg.onmousemove = this.onMouseMoveSvg.bind(this);
+    svg.onwheel = this.onWheelSvg.bind(this);
 
     this.drawArrows();
   }
@@ -192,24 +192,122 @@ export default class Context
   onMouseMoveSvg(event: MouseEvent) 
   {
     if (!this.elementMoving) {
+      /*
+      https://stackoverflow.com/questions/52576376/how-to-zoom-in-on-a-complex-svg-structure
+      endPoint = {x:e.x,y:e.y};
+      var dx = (startPoint.x - endPoint.x)/scale;
+      var dy = (startPoint.y - endPoint.y)/scale;
+      var movedViewBox = {x:viewBox.x+dx,y:viewBox.y+dy,w:viewBox.w,h:viewBox.h};
+      svgImage.setAttribute('viewBox', `${movedViewBox.x} ${movedViewBox.y} ${movedViewBox.w} ${movedViewBox.h}`);
+      */
       return;
     }
+
+    event.preventDefault();
+
     let svg = this.getSVG();
     if (!svg) {
       console.error("Can't find HTML element #svg");
       return;
     }
 
-    // Calculate the position of the mouse in the SVG
-    let bounds = svg.getBoundingClientRect();
-    let x = event.clientX - bounds.left;
-    let y = event.clientY - bounds.top;
+    let svgWidth : string|null = svg.getAttribute("width");
+    let w = 0;
+    if (svgWidth) {
+      w = parseInt(svgWidth);
+    }
 
-    // Update the block position and the arrows
+    let svgHeight : string|null = svg.getAttribute("height");
+    let h = 0;
+    if (svgHeight) {
+      h = parseInt(svgHeight);
+    }
+
+    // Get the viewbox
+    let viewboxX = 0;
+    let viewboxY = 0;
+    let viewboxW = 0;
+    let viewboxH = 0;
+    let viewbox : string|null = svg.getAttribute("viewBox");
+    if (viewbox) {
+      let elements = viewbox.split(' ');
+      viewboxX = parseInt(elements[0]);
+      viewboxY = parseInt(elements[1]);
+      viewboxW = parseInt(elements[2]);
+      viewboxH = parseInt(elements[3]);
+    }
+
+    let scaleWidth = 1;
+    let scaleHeight = 1;
+    if (viewboxW > 0) {
+      scaleWidth = w / viewboxW;
+    }
+    if (viewboxH > 0) {
+      scaleHeight = h / viewboxH;
+    }
+
+    // Calculate the position of the mouse in the SVG
     const blockId = parseInt(this.elementMoving.id.substring(1));
     const block = this.blocks[blockId];
-    block.updatePosition(x - block.width/2, y - block.height/2);
+    let x = block.x + event.movementX / scaleWidth; 
+    let y = block.y + event.movementY / scaleHeight;
+    block.updatePosition(x, y);
     this.drawArrows();
+  }
+
+  /** The mouse is zooming inside the SVG */
+  onWheelSvg(event: WheelEvent) 
+  {
+    event.preventDefault();
+
+    let svg = this.getSVG();
+    if (!svg) {
+      console.error("Can't find HTML element #svg");
+      return;
+    }
+
+    let svgWidth : string|null = svg.getAttribute("width");
+    let w = 0;
+    if (svgWidth) {
+      w = parseInt(svgWidth);
+    }
+
+    let svgHeight : string|null = svg.getAttribute("height");
+    let h = 0;
+    if (svgHeight) {
+      h = parseInt(svgHeight);
+    }
+
+    let viewboxX = 0;
+    let viewboxY = 0;
+    let viewboxW = w;
+    let viewboxH = h;
+    let viewbox : string|null = svg.getAttribute("viewBox");
+    if (viewbox) {
+      let elements = viewbox.split(' ');
+      viewboxX = parseInt(elements[0]);
+      viewboxY = parseInt(elements[1]);
+      viewboxW = parseInt(elements[2]);
+      viewboxH = parseInt(elements[3]);
+    }
+
+    let mx = event.offsetX;
+    let my = event.offsetY;    
+    let dw = w * Math.sign(event.deltaY) * 0.02;
+    let dh = h * Math.sign(event.deltaY) * 0.02;
+    let dx = dw * mx/w;
+    let dy = dh * my/h;
+
+    viewboxX -= dx;
+    viewboxY -= dy;
+    viewboxW += dw;
+    viewboxH += dh;
+    viewboxX = Math.max(viewboxX, 0);
+    viewboxY = Math.max(viewboxY, 0);
+    viewboxW = Math.max(viewboxW, 0);
+    viewboxH = Math.max(viewboxH, 0);
+
+    svg.setAttribute("viewBox", `${viewboxX} ${viewboxY} ${viewboxW} ${viewboxH}`);
   }
 
   /** The mouse is on a block */
@@ -234,7 +332,7 @@ export default class Context
     for (let i = 0; i < target.children.length; i++) {
       if (target.children[i].tagName == "line") {
         target.children[i].setAttribute("stroke", Theme.arrowOverColor);
-        target.children[i].setAttribute("stroke-width", Theme.arrowOverSize);
+        target.children[i].setAttribute("stroke-width", Theme.arrowOverThickness);
       } else {
         target.children[i].setAttribute("fill", Theme.arrowOverColor);
       }
@@ -252,7 +350,7 @@ export default class Context
     for (let i = 0; i < target.children.length; i++) {
       if (target.children[i].tagName == "line") {
         target.children[i].setAttribute("stroke", arrow.color);
-        target.children[i].setAttribute("stroke-width", "1");
+        target.children[i].setAttribute("stroke-width", arrow.thickness);
       } else {
         target.children[i].setAttribute("fill", arrow.color);
       }

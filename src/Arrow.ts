@@ -12,6 +12,7 @@ export default class Arrow
   currentInput: number;
   nbInput: number;
   color: string;
+  thickness: string;
 
   constructor(blockA: Block, blockB: Block, currentOutput=0, nbOutput=0, currentInput=0, nbInput=0, color="") 
   {
@@ -27,6 +28,7 @@ export default class Arrow
       color = Theme.arrowColor;
     }
     this.color = color;
+    this.thickness = Theme.arrowThickness;
   }
 
   private createLine(x1: number, y1: number, x2: number, y2: number) 
@@ -37,6 +39,7 @@ export default class Arrow
     line.setAttribute("x2", x2.toString());
     line.setAttribute("y2", y2.toString());
     line.setAttribute("stroke", this.color);
+    line.setAttribute("stroke-width", this.thickness);
     return line;
   }
 

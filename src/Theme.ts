@@ -6,14 +6,15 @@ export default class Theme
   static blockBackgroundColor = "#fff";
   static blockOverBackgroundColor = "#f1f1f1";
   static blockBorderColor = "#46484A";
-  static blockBorderSize = "2";
+  static blockBorderSize = "1.5";
   static blockFontColor = "#000";
-  static blockFontFamily = "Menlo";
-  static blockFontSize = "14";
+  static blockFontFamily = "sans-serif";
+  static blockFontSize = "12px";
 
   static arrowColor = "#007E93";
+  static arrowThickness = "1.5";
   static arrowValidColor = "#729D5A";
   static arrowInvalidColor = "#B5555A";
   static arrowOverColor = "#FFAB70";
-  static arrowOverSize = "2";
+  static arrowOverThickness = "3";
 }

@@ -79,6 +79,9 @@ export default class Block
     block.setAttribute("fill", Theme.blockBackgroundColor);
     block.setAttribute("stroke", Theme.blockBorderColor);
     block.setAttribute("stroke-width", Theme.blockBorderSize);
+    block.setAttribute("rx", Theme.blockBorderSize);
+    block.setAttribute("ry", Theme.blockBorderSize);
+    block.setAttribute("stroke-linejoin", "round");
     group.prepend(block);
   }
 
