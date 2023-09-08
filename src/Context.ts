@@ -192,14 +192,6 @@ export default class Context
   onMouseMoveSvg(event: MouseEvent) 
   {
     if (!this.elementMoving) {
-      /*
-      https://stackoverflow.com/questions/52576376/how-to-zoom-in-on-a-complex-svg-structure
-      endPoint = {x:e.x,y:e.y};
-      var dx = (startPoint.x - endPoint.x)/scale;
-      var dy = (startPoint.y - endPoint.y)/scale;
-      var movedViewBox = {x:viewBox.x+dx,y:viewBox.y+dy,w:viewBox.w,h:viewBox.h};
-      svgImage.setAttribute('viewBox', `${movedViewBox.x} ${movedViewBox.y} ${movedViewBox.w} ${movedViewBox.h}`);
-      */
       return;
     }
 
@@ -293,8 +285,8 @@ export default class Context
 
     let mx = event.offsetX;
     let my = event.offsetY;    
-    let dw = w * Math.sign(event.deltaY) * 0.02;
-    let dh = h * Math.sign(event.deltaY) * 0.02;
+    let dw = w * Math.sign(event.deltaY) * 0.01;
+    let dh = h * Math.sign(event.deltaY) * 0.01;
     let dx = dw * mx/w;
     let dy = dh * my/h;
 
@@ -307,7 +299,12 @@ export default class Context
     viewboxW = Math.max(viewboxW, 0);
     viewboxH = Math.max(viewboxH, 0);
 
-    svg.setAttribute("viewBox", `${viewboxX} ${viewboxY} ${viewboxW} ${viewboxH}`);
+    console.log(viewboxW, viewboxH);
+
+    if (viewboxW > 200 && viewboxH > 200 && viewboxW < 2000 && viewboxH < 2000) {
+      // Don't zoom too much
+      svg.setAttribute("viewBox", `${viewboxX} ${viewboxY} ${viewboxW} ${viewboxH}`);
+    }
   }
 
   /** The mouse is on a block */
