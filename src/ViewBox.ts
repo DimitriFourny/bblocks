@@ -16,7 +16,7 @@ export default class ViewBox
     this.height = height;
   }
 
-  updateSvg(svg: SVGElement)
+  updateViewBox(svg: SVGElement)
   {
     svg.setAttribute("viewBox", `${this.x} ${this.y} ${this.width} ${this.height}`);
   }
@@ -50,7 +50,8 @@ export default class ViewBox
       this.y = y;
       this.width = width;
       this.height = height;
-      this.updateSvg(svg);
+      this.updateViewBox(svg);
+      context.moveBackground(this.x, this.y, this.width, this.height);
     }
   }
 }

@@ -12,6 +12,7 @@ export default class Context
   elementMoving: HTMLElement | null;
   movingView: Boolean;
   viewBox: ViewBox;
+  backgroundElement: Element;
   
   constructor(blocksLines: Array<Array<string>>, links: Array<Array<number|string>>)
   {
@@ -22,6 +23,7 @@ export default class Context
     this.elementMoving = null;
     this.movingView = false;
     this.viewBox = new ViewBox(0, 0, 0, 0);
+    this.backgroundElement = document.createElementNS("http://www.w3.org/2000/svg", "rect");
   }
   
   svg() : SVGElement|null 
@@ -57,6 +59,14 @@ export default class Context
     }
 
     return parseInt(svgHeight);
+  }
+
+  moveBackground(x: number, y: number, width: number, height: number) 
+  {
+    this.backgroundElement.setAttribute("x", x.toString());
+    this.backgroundElement.setAttribute("y", y.toString());
+    this.backgroundElement.setAttribute("width", width.toString());
+    this.backgroundElement.setAttribute("height", height.toString());
   }
 
   drawArrows() 
@@ -149,6 +159,10 @@ export default class Context
     svg.setAttribute("width", imgWidth.toString());
     svg.setAttribute("height", imgHeight.toString());
 
+    // Update the viewbox
+    this.viewBox.width = imgWidth;
+    this.viewBox.height = imgHeight;
+
     document.body.style.background = Theme.svgBackgroundColor;
 
     let bg_pattern = document.createElementNS("http://www.w3.org/2000/svg", "pattern");
@@ -167,11 +181,9 @@ export default class Context
     bg_circle.setAttribute("fill", "#aaa");
     bg_pattern.appendChild(bg_circle); 
 
-    let background = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-    background.setAttribute("width", imgWidth.toString());
-    background.setAttribute("height", imgHeight.toString());
-    background.setAttribute("fill", "url(#p1)");
-    svg.appendChild(background);
+    this.backgroundElement.setAttribute("fill", "url(#p1)");
+    this.moveBackground(0, 0, imgWidth, imgHeight);
+    svg.appendChild(this.backgroundElement);
 
     const marginBottomBlocks = 40;
     const marginLeftBlocks = 40;
@@ -206,10 +218,6 @@ export default class Context
     svg.onwheel = this.onWheelSvg.bind(this);
 
     this.drawArrows();
-
-    // Update the viewbox
-    this.viewBox.width = imgWidth;
-    this.viewBox.height = imgHeight;
   }
 
   /** The drag and drop on a block is starting */
@@ -219,7 +227,7 @@ export default class Context
       // Not left click
       return;
     }
-    
+
     if (!this.elementMoving) {
       this.elementMoving = <HTMLElement> event.currentTarget;
     } else {
@@ -299,7 +307,8 @@ export default class Context
     } else if (this.movingView) {
       this.viewBox.x -= event.movementX / scaleWidth; 
       this.viewBox.y -= event.movementY / scaleHeight;
-      this.viewBox.updateSvg(svg);
+      this.viewBox.updateViewBox(svg);
+      this.moveBackground(this.viewBox.x, this.viewBox.y, this.viewBox.width, this.viewBox.height);
     }
   }
 
