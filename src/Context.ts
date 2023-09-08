@@ -1,7 +1,7 @@
 import Block from "./Block";
 import Arrow from "./Arrow";
 import Theme from "./Theme";
-
+import ViewBox from "./ViewBox";
 
 export default class Context 
 {
@@ -11,6 +11,7 @@ export default class Context
   arrows: Array<Arrow>;
   elementMoving: HTMLElement | null;
   movingView: Boolean;
+  viewBox: ViewBox;
   
   constructor(blocksLines: Array<Array<string>>, links: Array<Array<number|string>>)
   {
@@ -20,16 +21,47 @@ export default class Context
     this.arrows = [];
     this.elementMoving = null;
     this.movingView = false;
+    this.viewBox = new ViewBox(0, 0, 0, 0);
   }
   
-  getSVG() :SVGElement|null 
+  svg() : SVGElement|null 
   {
     return <SVGElement|null> document.getElementById("svg");
   }
 
+  svgWidth() : number
+  {
+    let svg = this.svg();
+    if (!svg) {
+      return 0;
+    }
+
+    let svgWidth : string|null = svg.getAttribute("width");
+    if (!svgWidth) {
+      return 0;
+    }
+
+    return parseInt(svgWidth);
+  }
+
+  svgHeight() : number
+  {
+    let svg = this.svg();
+    if (!svg) {
+      return 0;
+    }
+
+    let svgHeight : string|null = svg.getAttribute("height");
+    if (!svgHeight) {
+      return 0;
+    }
+
+    return parseInt(svgHeight);
+  }
+
   drawArrows() 
   {
-    let svg = this.getSVG();
+    let svg = this.svg();
     if (!svg) {
       console.error("Can't find HTML element #svg");
       return;
@@ -104,7 +136,7 @@ export default class Context
 
   draw()
   {
-    let svg = this.getSVG();
+    let svg = this.svg();
     if (!svg) {
       console.error("Can't find HTML element #svg");
       return;
@@ -174,6 +206,10 @@ export default class Context
     svg.onwheel = this.onWheelSvg.bind(this);
 
     this.drawArrows();
+
+    // Update the viewbox
+    this.viewBox.width = imgWidth;
+    this.viewBox.height = imgHeight;
   }
 
   /** The drag and drop on a block is starting */
@@ -216,45 +252,23 @@ export default class Context
       return;
     }
 
-    let svg = this.getSVG();
+    let svg = this.svg();
     if (!svg) {
       console.error("Can't find HTML element #svg");
       return;
     }
 
-    let svgWidth : string|null = svg.getAttribute("width");
-    let w = 0;
-    if (svgWidth) {
-      w = parseInt(svgWidth);
-    }
-
-    let svgHeight : string|null = svg.getAttribute("height");
-    let h = 0;
-    if (svgHeight) {
-      h = parseInt(svgHeight);
-    }
+    let svgWidth = this.svgWidth();
+    let svgHeight = this.svgHeight();
 
     // Get the viewbox
-    let viewboxX = 0;
-    let viewboxY = 0;
-    let viewboxW = 0;
-    let viewboxH = 0;
-    let viewbox : string|null = svg.getAttribute("viewBox");
-    if (viewbox) {
-      let elements = viewbox.split(' ');
-      viewboxX = parseInt(elements[0]);
-      viewboxY = parseInt(elements[1]);
-      viewboxW = parseInt(elements[2]);
-      viewboxH = parseInt(elements[3]);
-    }
-
     let scaleWidth = 1;
     let scaleHeight = 1;
-    if (viewboxW > 0) {
-      scaleWidth = w / viewboxW;
+    if (this.viewBox.width > 0) {
+      scaleWidth = svgWidth / this.viewBox.width;
     }
-    if (viewboxH > 0) {
-      scaleHeight = h / viewboxH;
+    if (this.viewBox.height > 0) {
+      scaleHeight = svgHeight / this.viewBox.height;
     }
 
     if (this.elementMoving) {
@@ -266,30 +280,9 @@ export default class Context
       block.updatePosition(x, y);
       this.drawArrows();
     } else if (this.movingView) {
-      let viewboxX = 0;
-      let viewboxY = 0;
-      let viewboxW = w;
-      let viewboxH = h;
-      let viewbox : string|null = svg.getAttribute("viewBox");
-      if (viewbox) {
-        let elements = viewbox.split(' ');
-        viewboxX = parseInt(elements[0]);
-        viewboxY = parseInt(elements[1]);
-        viewboxW = parseInt(elements[2]);
-        viewboxH = parseInt(elements[3]);
-      }
-
-      viewboxX -= event.movementX / scaleWidth; 
-      if (viewboxX < 0) {
-        viewboxX = 0;
-      }
-
-      viewboxY -= event.movementY / scaleHeight;
-      if (viewboxY < 0) {
-        viewboxY = 0;
-      }
-
-      svg.setAttribute("viewBox", `${viewboxX} ${viewboxY} ${viewboxW} ${viewboxH}`);
+      this.viewBox.x -= event.movementX / scaleWidth; 
+      this.viewBox.y -= event.movementY / scaleHeight;
+      this.viewBox.updateSvg(svg);
     }
   }
 
@@ -298,57 +291,13 @@ export default class Context
   {
     event.preventDefault();
 
-    let svg = this.getSVG();
+    let svg = this.svg();
     if (!svg) {
       console.error("Can't find HTML element #svg");
       return;
     }
 
-    let svgWidth : string|null = svg.getAttribute("width");
-    let w = 0;
-    if (svgWidth) {
-      w = parseInt(svgWidth);
-    }
-
-    let svgHeight : string|null = svg.getAttribute("height");
-    let h = 0;
-    if (svgHeight) {
-      h = parseInt(svgHeight);
-    }
-
-    let viewboxX = 0;
-    let viewboxY = 0;
-    let viewboxW = w;
-    let viewboxH = h;
-    let viewbox : string|null = svg.getAttribute("viewBox");
-    if (viewbox) {
-      let elements = viewbox.split(' ');
-      viewboxX = parseInt(elements[0]);
-      viewboxY = parseInt(elements[1]);
-      viewboxW = parseInt(elements[2]);
-      viewboxH = parseInt(elements[3]);
-    }
-
-    let mx = event.offsetX;
-    let my = event.offsetY;    
-    let dw = w * Math.sign(event.deltaY) * 0.01;
-    let dh = h * Math.sign(event.deltaY) * 0.01;
-    let dx = dw * mx/w;
-    let dy = dh * my/h;
-
-    viewboxX -= dx;
-    viewboxY -= dy;
-    viewboxW += dw;
-    viewboxH += dh;
-    viewboxX = Math.max(viewboxX, 0);
-    viewboxY = Math.max(viewboxY, 0);
-    viewboxW = Math.max(viewboxW, 0);
-    viewboxH = Math.max(viewboxH, 0);
-
-    if (viewboxW > 200 && viewboxH > 200 && viewboxW < 2000 && viewboxH < 2000) {
-      // Don't zoom too much
-      svg.setAttribute("viewBox", `${viewboxX} ${viewboxY} ${viewboxW} ${viewboxH}`);
-    }
+    this.viewBox.zoomAt(this, event.offsetX, event.offsetY, event.deltaY);
   }
 
   /** The mouse is on a block */
