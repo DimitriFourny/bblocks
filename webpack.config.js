@@ -17,5 +17,8 @@ module.exports = {
   output: {
     filename: 'bblocks.js',
     path: path.resolve(__dirname, 'dist')
-  }
+  },
+  optimization: {
+    minimize: true,
+  },
 };

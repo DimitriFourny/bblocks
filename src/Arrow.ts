@@ -31,16 +31,20 @@ export default class Arrow
     this.thickness = Theme.arrowThickness;
   }
 
+  private createPath(coord : string)
+  {
+    let path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", coord);
+    path.setAttribute("stroke", this.color);
+    path.setAttribute("stroke-width", this.thickness);
+    path.setAttribute("fill", "none");
+    return path;
+  }
+
   private createLine(x1: number, y1: number, x2: number, y2: number) 
   {
-    let line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-    line.setAttribute("x1", x1.toString());
-    line.setAttribute("y1", y1.toString());
-    line.setAttribute("x2", x2.toString());
-    line.setAttribute("y2", y2.toString());
-    line.setAttribute("stroke", this.color);
-    line.setAttribute("stroke-width", this.thickness);
-    return line;
+    let coord = `M ${x1} ${y1} L ${x2} ${y2}`;
+    return this.createPath(coord);
   }
 
   private createArrowEnd(x: number, y: number, width: number, height: number, rotate_degrees=0) 
@@ -91,27 +95,23 @@ export default class Arrow
       y  = this.blockA.y + this.blockA.height;
       x2 = x;
       y2 = y + 10 + this.currentOutput*10;
-      group.appendChild(this.createLine(x, y, x2, y2));
+      let coord = `M ${x} ${y} L ${x2} ${y2}`;
 
-      x  = x2;
-      y  = y2;
       x2 = Math.max(this.blockA.x+this.blockA.width, this.blockB.x+this.blockB.width) + 20 + this.currentInput*10; 
-      group.appendChild(this.createLine(x, y, x2, y2));
+      coord += ` L ${x2} ${y2}`;
 
-      x  = x2;
-      y  = y2;
       y2 = this.blockB.y - 20 - this.currentInput*10; ;
-      group.appendChild(this.createLine(x, y, x2, y2));
+      coord += ` L ${x2} ${y2}`;
 
-      x  = x2;
-      y  = y2;
       x2 = this.blockB.x + this.blockB.width/3 + inputPos*(this.blockB.width/3);
-      group.appendChild(this.createLine(x, y, x2, y2));
+      coord += ` L ${x2} ${y2}`;
 
       x  = x2;
       y  = y2;
       y2 = this.blockB.y;
-      group.appendChild(this.createLine(x, y, x2, y2));
+      coord += ` L ${x2} ${y2}`;
+
+      group.appendChild(this.createPath(coord));
     }
 
     const arrowEndWidth = 10; 

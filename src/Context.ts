@@ -165,6 +165,7 @@ export default class Context
 
     document.body.style.background = Theme.svgBackgroundColor;
 
+    // Add the background
     let bg_pattern = document.createElementNS("http://www.w3.org/2000/svg", "pattern");
     bg_pattern.setAttribute("id", "p1");
     bg_pattern.setAttribute("x", "5");
@@ -185,6 +186,12 @@ export default class Context
     this.moveBackground(0, 0, imgWidth, imgHeight);
     svg.appendChild(this.backgroundElement);
 
+    // Now a bit of CSS style
+    let style = document.createElementNS("http://www.w3.org/2000/svg", "style");
+    style.innerHTML = "path { stroke-dasharray: 4 1; }";
+    svg.appendChild(style);
+
+    // The blocks
     const marginBottomBlocks = 40;
     const marginLeftBlocks = 40;
     let posY = marginBottomBlocks;
@@ -346,7 +353,7 @@ export default class Context
     let target = <HTMLElement> event.currentTarget;
 
     for (let i = 0; i < target.children.length; i++) {
-      if (target.children[i].tagName == "line") {
+      if (target.children[i].tagName == "path") {
         target.children[i].setAttribute("stroke", Theme.arrowOverColor);
         target.children[i].setAttribute("stroke-width", Theme.arrowOverThickness);
       } else {
@@ -364,7 +371,7 @@ export default class Context
     const arrow = this.arrows[arrowId];
 
     for (let i = 0; i < target.children.length; i++) {
-      if (target.children[i].tagName == "line") {
+      if (target.children[i].tagName == "path") {
         target.children[i].setAttribute("stroke", arrow.color);
         target.children[i].setAttribute("stroke-width", arrow.thickness);
       } else {
