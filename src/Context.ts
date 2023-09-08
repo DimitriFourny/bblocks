@@ -10,6 +10,7 @@ export default class Context
   blocks: Array<Block>;
   arrows: Array<Arrow>;
   elementMoving: HTMLElement | null;
+  movingView: Boolean;
   
   constructor(blocksLines: Array<Array<string>>, links: Array<Array<number|string>>)
   {
@@ -18,6 +19,7 @@ export default class Context
     this.blocks = [];
     this.arrows = [];
     this.elementMoving = null;
+    this.movingView = false;
   }
   
   getSVG() :SVGElement|null 
@@ -166,6 +168,8 @@ export default class Context
       posY += block.height + marginBottomBlocks;
     });
 
+    svg.onmousedown = this.onMouseDownSvg.bind(this); 
+    svg.onmouseup = this.onMouseUpSvg.bind(this); 
     svg.onmousemove = this.onMouseMoveSvg.bind(this);
     svg.onwheel = this.onWheelSvg.bind(this);
 
@@ -179,6 +183,7 @@ export default class Context
       this.elementMoving = <HTMLElement> event.currentTarget;
     } else {
       this.elementMoving = null;
+      this.movingView = true;
     }
   }
 
@@ -186,16 +191,30 @@ export default class Context
   onMouseUpBlock(event: MouseEvent) 
   {
     this.elementMoving = null;
+    this.movingView = false;
+  }
+
+  onMouseDownSvg(event: MouseEvent) 
+  {
+    if (this.elementMoving) {
+      return;
+    }
+    this.movingView = true;
+  }
+
+  onMouseUpSvg(event: MouseEvent) 
+  {
+    this.movingView = false;
   }
 
   /** The mouse is moving inside the SVG */
   onMouseMoveSvg(event: MouseEvent) 
   {
-    if (!this.elementMoving) {
+    event.preventDefault();
+
+    if (!this.elementMoving && !this.movingView) {
       return;
     }
-
-    event.preventDefault();
 
     let svg = this.getSVG();
     if (!svg) {
@@ -238,13 +257,40 @@ export default class Context
       scaleHeight = h / viewboxH;
     }
 
-    // Calculate the position of the mouse in the SVG
-    const blockId = parseInt(this.elementMoving.id.substring(1));
-    const block = this.blocks[blockId];
-    let x = block.x + event.movementX / scaleWidth; 
-    let y = block.y + event.movementY / scaleHeight;
-    block.updatePosition(x, y);
-    this.drawArrows();
+    if (this.elementMoving) {
+      // Calculate the position of the mouse in the SVG
+      const blockId = parseInt(this.elementMoving.id.substring(1));
+      const block = this.blocks[blockId];
+      let x = block.x + event.movementX / scaleWidth; 
+      let y = block.y + event.movementY / scaleHeight;
+      block.updatePosition(x, y);
+      this.drawArrows();
+    } else if (this.movingView) {
+      let viewboxX = 0;
+      let viewboxY = 0;
+      let viewboxW = w;
+      let viewboxH = h;
+      let viewbox : string|null = svg.getAttribute("viewBox");
+      if (viewbox) {
+        let elements = viewbox.split(' ');
+        viewboxX = parseInt(elements[0]);
+        viewboxY = parseInt(elements[1]);
+        viewboxW = parseInt(elements[2]);
+        viewboxH = parseInt(elements[3]);
+      }
+
+      viewboxX -= event.movementX / scaleWidth; 
+      if (viewboxX < 0) {
+        viewboxX = 0;
+      }
+
+      viewboxY -= event.movementY / scaleHeight;
+      if (viewboxY < 0) {
+        viewboxY = 0;
+      }
+
+      svg.setAttribute("viewBox", `${viewboxX} ${viewboxY} ${viewboxW} ${viewboxH}`);
+    }
   }
 
   /** The mouse is zooming inside the SVG */
@@ -298,8 +344,6 @@ export default class Context
     viewboxY = Math.max(viewboxY, 0);
     viewboxW = Math.max(viewboxW, 0);
     viewboxH = Math.max(viewboxH, 0);
-
-    console.log(viewboxW, viewboxH);
 
     if (viewboxW > 200 && viewboxH > 200 && viewboxW < 2000 && viewboxH < 2000) {
       // Don't zoom too much
