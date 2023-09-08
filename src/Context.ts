@@ -215,6 +215,11 @@ export default class Context
   /** The drag and drop on a block is starting */
   onMouseDownBlock(event: MouseEvent) 
   {
+    if (event.button != 0) {
+      // Not left click
+      return;
+    }
+    
     if (!this.elementMoving) {
       this.elementMoving = <HTMLElement> event.currentTarget;
     } else {
@@ -226,12 +231,20 @@ export default class Context
   /** The drag and drop on a block is finishing */
   onMouseUpBlock(event: MouseEvent) 
   {
+    if (event.button != 0) {
+      // Not left click
+      return;
+    }
     this.elementMoving = null;
     this.movingView = false;
   }
 
   onMouseDownSvg(event: MouseEvent) 
   {
+    if (event.button != 0) {
+      // Not left click
+      return;
+    }
     if (this.elementMoving) {
       return;
     }
@@ -240,6 +253,10 @@ export default class Context
 
   onMouseUpSvg(event: MouseEvent) 
   {
+    if (event.button != 0) {
+      // Not left click
+      return;
+    }
     this.movingView = false;
   }
 
