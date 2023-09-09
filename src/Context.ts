@@ -189,17 +189,41 @@ export default class Context
     style.innerHTML = "path { stroke-dasharray: 4 1; }";
     svg.appendChild(style);
 
+    // Create a blocks tree
+    interface BlockLinksStatus {
+      sources: Array<number>;
+      destinations: Array<number>;
+    };
+
+    let blocksLinks: Array<BlockLinksStatus> = [];
+
+    for (let i = 0; i < this.blocksLines.length; i++) {
+      let status: BlockLinksStatus = {
+        sources: [],
+        destinations: []     
+      };
+      blocksLinks.push(status);
+    }
+
+    this.links.forEach(link => {
+      const sourceId = <number>link[0];
+      const destinationId = <number>link[1];
+      blocksLinks[sourceId].destinations.push(destinationId);
+      blocksLinks[destinationId].sources.push(sourceId);
+    });
+
     // The blocks
     const marginBottomBlocks = 40;
     const marginLeftBlocks = 40;
+    let posX = 0;
     let posY = marginBottomBlocks;
 
     this.blocksLines.forEach((lines) => {
-      let block = new Block(0, posY, lines);
+      let block = new Block(posX, posY, lines);
       block.draw(svg!); 
 
       // Move the element to the center 
-      block.updatePosition(imgWidth/2 - block.width/2, block.y);
+      block.updatePosition(block.x + imgWidth/2 - block.width/2, block.y);
 
       // Register the mouse events
       let block_elem = block.getElement();
@@ -208,13 +232,30 @@ export default class Context
         return;
       }
 
+      // Calculate the position of the next block
+      let nextBlockIsHorizontal = false;
+      let currentBlockId = block.id;
+      let nextBlockId = currentBlockId+1;
+      if (nextBlockId < this.blocksLines.length) {
+        let commonParents = blocksLinks[currentBlockId].sources.filter(
+            elm => blocksLinks[nextBlockId].sources.includes(elm));
+        if (commonParents.length > 0) {
+          nextBlockIsHorizontal = true;
+          posX += block.width + marginBottomBlocks;
+        }
+      }
+
+      if (!nextBlockIsHorizontal) {
+        posX = 0;
+        posY += block.height + marginBottomBlocks;
+      }
+
+      // Events
       block_elem.onmousedown = this.onMouseDownBlock.bind(this); 
       block_elem.onmouseup = this.onMouseUpBlock.bind(this); 
       block_elem.onmouseenter = this.onMouseEnterBlock.bind(this); 
       block_elem.onmouseleave = this.onMouseLeaveBlock.bind(this); 
-
       this.blocks.push(block);
-      posY += block.height + marginBottomBlocks;
     });
 
     svg.onmousedown = this.onMouseDownSvg.bind(this); 

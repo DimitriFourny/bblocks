@@ -43,6 +43,8 @@ export default class Block
     let minBoxHeight = 2*this.paddingBottom;
     let firstText: SVGTextElement | null = null;
 
+    this.lines.unshift(this.id.toString());
+
     this.lines.forEach((line) => {
       let text = document.createElementNS("http://www.w3.org/2000/svg", "text");
       if (!firstText) {
