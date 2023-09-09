@@ -11,6 +11,7 @@ export default class Block
   height: number;
   fontFamily: string;
   paddingTop: number;
+  paddingBottom: number;
   paddingLeft: number;
 
   constructor(x: number, y: number, lines: Array<string>, width=0, height=0) 
@@ -22,7 +23,8 @@ export default class Block
     this.width = width;
     this.height = height;
     this.fontFamily = "Menlo";
-    this.paddingTop = 10;
+    this.paddingTop = 20;
+    this.paddingBottom = 10;
     this.paddingLeft = 10;
   }
 
@@ -38,7 +40,7 @@ export default class Block
     let textY = this.paddingTop;
 
     let maxTextWidth = 0;
-    let minBoxHeight = 2*this.paddingTop;
+    let minBoxHeight = 2*this.paddingBottom;
     let firstText: SVGTextElement | null = null;
 
     this.lines.forEach((line) => {

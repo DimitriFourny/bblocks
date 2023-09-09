@@ -152,8 +152,6 @@ export default class Context
       return;
     }
 
-    svg.setAttribute("dominant-baseline", "hanging"); // Reference text position to top left
-
     const imgWidth = window.innerWidth;
     const imgHeight = window.innerHeight;
     svg.setAttribute("width", imgWidth.toString());
