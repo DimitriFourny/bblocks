@@ -45,8 +45,8 @@ let links = [
   [3, 6],
   [5, 7, Theme.arrowValidColor], 
   [5, 8, Theme.arrowInvalidColor], 
-  [8, 2],
-]
+  [8, 0],
+];
 
 let context = new Context(blocksLines, links);
 context.draw();

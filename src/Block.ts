@@ -4,6 +4,7 @@ export default class Block
 {
   static next_id = 0;
   id: number;
+  depth: number;
   x: number;
   y: number;
   lines: Array<string>;
@@ -14,9 +15,10 @@ export default class Block
   paddingBottom: number;
   paddingLeft: number;
 
-  constructor(x: number, y: number, lines: Array<string>, width=0, height=0) 
+  constructor(id: number, depth: number, x: number, y: number, lines: Array<string>, width=0, height=0) 
   {
-    this.id = Block.next_id++;
+    this.id = id;
+    this.depth = depth;
     this.x = x;
     this.y = y;
     this.lines = lines;
@@ -42,8 +44,6 @@ export default class Block
     let maxTextWidth = 0;
     let minBoxHeight = 2*this.paddingBottom;
     let firstText: SVGTextElement | null = null;
-
-    this.lines.unshift(this.id.toString());
 
     this.lines.forEach((line) => {
       let text = document.createElementNS("http://www.w3.org/2000/svg", "text");

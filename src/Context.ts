@@ -7,7 +7,7 @@ export default class Context
 {
   blocksLines: Array<Array<string>>;
   links: Array<Array<number|string>>;
-  blocks: Array<Block>;
+  blocks: Map<number, Block>;
   arrows: Array<Arrow>;
   elementMoving: HTMLElement | null;
   movingView: Boolean;
@@ -18,7 +18,7 @@ export default class Context
   {
     this.blocksLines = blocksLines;
     this.links = links;
-    this.blocks = [];
+    this.blocks = new Map<number, Block>;
     this.arrows = [];
     this.elementMoving = null;
     this.movingView = false;
@@ -93,7 +93,7 @@ export default class Context
 
     let states: Array<State> = [];
 
-    for (let i = 0; i < this.blocks.length; i++) {
+    for (let i = 0; i < this.blocks.size; i++) {
       let state: State = {
         current_input: 0,
         nb_inputs: 0,
@@ -120,8 +120,8 @@ export default class Context
       }
 
       let arrow = new Arrow(
-        this.blocks[output_id], 
-        this.blocks[input_id],
+        this.blocks.get(output_id)!, 
+        this.blocks.get(input_id)!,
         states[output_id].current_output++,
         states[output_id].nb_outputs,
         states[input_id].current_input++,
@@ -212,50 +212,101 @@ export default class Context
       blocksLinks[destinationId].sources.push(sourceId);
     });
 
-    // The blocks
-    const marginBottomBlocks = 40;
-    const marginLeftBlocks = 40;
-    let posX = 0;
-    let posY = marginBottomBlocks;
+    let orderedBlocks : Array<number> = [];
+    let currentBlockId = 0;
+    let depth = 0;
+    let posXForDepth = new Map<number, number>;
 
-    this.blocksLines.forEach((lines) => {
-      let block = new Block(posX, posY, lines);
-      block.draw(svg!); 
-
-      // Move the element to the center 
-      block.updatePosition(block.x + imgWidth/2 - block.width/2, block.y);
-
-      // Register the mouse events
-      let block_elem = block.getElement();
-      if (!block_elem) {
-        console.error("Can't find block element id " + block.id);
-        return;
+    // Save the block, go in one of its children
+    while (true) {
+      if (orderedBlocks.length >= this.blocksLines.length) {
+        // We have all our blocks
+        break;
       }
 
-      // Calculate the position of the next block
-      let nextBlockIsHorizontal = false;
-      let currentBlockId = block.id;
-      let nextBlockId = currentBlockId+1;
-      if (nextBlockId < this.blocksLines.length) {
-        let commonParents = blocksLinks[currentBlockId].sources.filter(
-            elm => blocksLinks[nextBlockId].sources.includes(elm));
-        if (commonParents.length > 0) {
-          nextBlockIsHorizontal = true;
-          posX += block.width + marginBottomBlocks;
+      if (!orderedBlocks.includes(currentBlockId)) {
+        orderedBlocks.push(currentBlockId);
+
+        // Render it
+        let lines = this.blocksLines[currentBlockId];
+        lines.unshift("depth: " + depth.toString());        // to debug
+        lines.unshift("id: " + currentBlockId.toString());  // to debug
+
+        if (!posXForDepth.has(depth)) {
+          posXForDepth.set(depth, 0);
+        }
+        let posX = posXForDepth.get(depth)!;
+        let posY = depth * 200;              // We will update it just after
+
+        let block = new Block(currentBlockId, depth, posX, posY, lines);
+        block.draw(svg!); 
+
+        posXForDepth.set(depth, posX + block.width + 40);
+ 
+        let block_elem = block.getElement();
+        if (!block_elem) {
+          console.error("Can't find block element id " + block.id);
+          return;
+        }
+        block_elem.onmousedown = this.onMouseDownBlock.bind(this); 
+        block_elem.onmouseup = this.onMouseUpBlock.bind(this); 
+        block_elem.onmouseenter = this.onMouseEnterBlock.bind(this); 
+        block_elem.onmouseleave = this.onMouseLeaveBlock.bind(this); 
+
+        this.blocks.set(currentBlockId, block);
+      }
+
+      let nextBlockId = -1;
+      
+      // Continue in a children if possible
+      for (let i = 0; i < blocksLinks[currentBlockId].destinations.length; i++) {
+        let possibleNextBlockId = blocksLinks[currentBlockId].destinations[i];
+        if (!orderedBlocks.includes(possibleNextBlockId)) {
+          // Not registered yet
+          nextBlockId = possibleNextBlockId;  
+          break;
         }
       }
+      if (nextBlockId != -1) {
+        // We have a children not registered, continue
+        depth++;
+        if (!posXForDepth.has(depth)) {
+          let currentBlock = this.blocks.get(currentBlockId)!;
+          posXForDepth.set(depth, currentBlock.x);
+        }
 
-      if (!nextBlockIsHorizontal) {
-        posX = 0;
-        posY += block.height + marginBottomBlocks;
+        currentBlockId = nextBlockId;
+        continue
       }
 
-      // Events
-      block_elem.onmousedown = this.onMouseDownBlock.bind(this); 
-      block_elem.onmouseup = this.onMouseUpBlock.bind(this); 
-      block_elem.onmouseenter = this.onMouseEnterBlock.bind(this); 
-      block_elem.onmouseleave = this.onMouseLeaveBlock.bind(this); 
-      this.blocks.push(block);
+      // Go back inside the first source
+      if (blocksLinks[currentBlockId].sources.length > 0) {
+        currentBlockId = blocksLinks[currentBlockId].sources[0];
+        depth--;
+        continue;
+      }
+
+      // The root node doesn't have any source, we stop
+      break
+    }
+
+    // Update the blocs Y to fit
+    let maxHeightForDepth = new Map<number, number>;
+    this.blocks.forEach((block) => {
+      let maxHeight = maxHeightForDepth.get(block.depth);
+      if (!maxHeight || maxHeight < block.height) {
+        maxHeightForDepth.set(block.depth, block.height);
+      }
+    });
+
+    this.blocks.forEach((block) => {
+      let y = 0;
+      for (let prevDepth = 0; prevDepth < block.depth; prevDepth++) {
+        let maxHeight = maxHeightForDepth.get(prevDepth)!;
+        y += maxHeight + 40;
+      }
+
+      block.updatePosition(block.x, y);
     });
 
     svg.onmousedown = this.onMouseDownSvg.bind(this); 
@@ -345,7 +396,7 @@ export default class Context
     if (this.elementMoving) {
       // Calculate the position of the mouse in the SVG
       const blockId = parseInt(this.elementMoving.id.substring(1));
-      const block = this.blocks[blockId];
+      const block = this.blocks.get(blockId)!;
       let x = block.x + event.movementX / scaleWidth; 
       let y = block.y + event.movementY / scaleHeight;
       block.updatePosition(x, y);
