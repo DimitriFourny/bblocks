@@ -212,14 +212,28 @@ export default class Context
       blocksLinks[destinationId].sources.push(sourceId);
     });
 
+    // Remove blocks without source links, except for the root node
+    let nodeWithSrcLinks = new Array<number>;
+    for (let blockId = 0; blockId < this.blocksLines.length; blockId++) {
+      nodeWithSrcLinks = nodeWithSrcLinks.concat(blocksLinks[blockId].destinations);
+    }
+    
+    let nbBlocksWithoutSrcLinks = 0; 
+    for (let blockId = 1; blockId < this.blocksLines.length; blockId++) {
+      if (!nodeWithSrcLinks.includes(blockId)) {
+        console.log(blockId);
+        nbBlocksWithoutSrcLinks++;
+      }
+    }
+
     let orderedBlocks : Array<number> = [];
     let currentBlockId = 0;
     let depth = 0;
     let posXForDepth = new Map<number, number>;
 
-    // Save the block, go in one of its children
+    // Show the block in the right order
     while (true) {
-      if (orderedBlocks.length >= this.blocksLines.length) {
+      if (orderedBlocks.length >= this.blocksLines.length - nbBlocksWithoutSrcLinks) {
         // We have all our blocks
         break;
       }
@@ -229,8 +243,8 @@ export default class Context
 
         // Render it
         let lines = this.blocksLines[currentBlockId];
-        lines.unshift("depth: " + depth.toString());        // to debug
-        lines.unshift("id: " + currentBlockId.toString());  // to debug
+        let dbgInfo = `id: ${currentBlockId.toString()} | depth: ${depth.toString()}`;
+        lines.unshift(dbgInfo); // to debug
 
         if (!posXForDepth.has(depth)) {
           posXForDepth.set(depth, 0);
@@ -287,7 +301,7 @@ export default class Context
       }
 
       // The root node doesn't have any source, we stop
-      break
+      break;
     }
 
     // Update the blocs Y to fit
