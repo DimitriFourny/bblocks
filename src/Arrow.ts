@@ -1,5 +1,7 @@
 import Block from "./Block";
 import Theme from "./Theme";
+import { DepthArea } from "./Layout";
+
 
 export default class Arrow
 {
@@ -62,7 +64,7 @@ export default class Arrow
     return polygon;
   }
 
-  draw(svg: SVGElement) 
+  draw(svg: SVGElement, depthAreas: Map<number, DepthArea>) 
   {
     let group = document.createElementNS("http://www.w3.org/2000/svg", "g");
     group.setAttribute("id", "l"+this.id);
@@ -82,7 +84,8 @@ export default class Arrow
     }
 
     if (this.blockB.y >= this.blockA.y + this.blockA.height) {
-      // BlockB is after BlockA      
+      // BlockB is after BlockA    
+      // This is the easy scenario, one simple line
       x  = this.blockA.x + this.blockA.width/3 + outputPos*(this.blockA.width/3);
       y  = this.blockA.y + this.blockA.height;
       x2 = this.blockB.x + this.blockB.width/3 + inputPos*(this.blockB.width/3);
@@ -97,10 +100,34 @@ export default class Arrow
       y2 = y + 10 + this.currentOutput*10;
       let coord = `M ${x} ${y} L ${x2} ${y2}`;
 
-      x2 = Math.max(this.blockA.x+this.blockA.width, this.blockB.x+this.blockB.width) + 20 + this.currentInput*10; 
+      // This x2 needs to be calculated correctly to not cover a previous block.
+      // Get all traversed areas
+      let smallestDepth = this.blockA.depth > this.blockB.depth ? this.blockB.depth : this.blockA.depth;
+      let biggestDepth  = this.blockA.depth > this.blockB.depth ? this.blockA.depth : this.blockB.depth;
+      let traversedAreas = [];
+      for (let depth = smallestDepth; depth <= biggestDepth; depth++) {
+        traversedAreas.push(depth);
+      }
+      
+      // Now the biggest position X where we can have something
+      let biggestX = 0;
+      traversedAreas.forEach((depth) => {
+        let area = depthAreas.get(depth);
+        if (!area) {
+          return;
+        }
+
+        let areaBiggestX = area.x + area.width;
+        if (areaBiggestX > biggestX) {
+          biggestX = areaBiggestX;
+        }
+      });
+
+      x2 = biggestX + 10;
+      x2 += this.currentInput*10; // Padding to not have collision with others input
       coord += ` L ${x2} ${y2}`;
 
-      y2 = this.blockB.y - 20 - this.currentInput*10; ;
+      y2 = this.blockB.y - 10 - this.currentInput*10; ;
       coord += ` L ${x2} ${y2}`;
 
       x2 = this.blockB.x + this.blockB.width/3 + inputPos*(this.blockB.width/3);

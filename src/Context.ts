@@ -2,6 +2,7 @@ import Block from "./Block";
 import Arrow from "./Arrow";
 import Theme from "./Theme";
 import ViewBox from "./ViewBox";
+import { Layout, DepthArea } from "./Layout";
 
 export default class Context 
 {
@@ -13,7 +14,8 @@ export default class Context
   movingView: Boolean;
   viewBox: ViewBox;
   backgroundElement: Element;
-  
+  layout: Layout;
+
   constructor(blocksLines: Array<Array<string>>, links: Array<Array<number|string>>)
   {
     this.blocksLines = blocksLines;
@@ -24,6 +26,7 @@ export default class Context
     this.movingView = false;
     this.viewBox = new ViewBox(0, 0, 0, 0);
     this.backgroundElement = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    this.layout = new Layout;
   }
   
   svg() : SVGElement|null 
@@ -67,6 +70,27 @@ export default class Context
     this.backgroundElement.setAttribute("y", y.toString());
     this.backgroundElement.setAttribute("width", width.toString());
     this.backgroundElement.setAttribute("height", height.toString());
+  }
+
+  addDebugRect(x: number, y: number, width: number, height:number) 
+  {
+    let svg = this.svg();
+    if (!svg) {
+      console.error("Can't find HTML element #svg");
+      return;
+    }
+
+    let block = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    block.setAttribute("width", width.toString());
+    block.setAttribute("height", height.toString());
+    block.setAttribute("fill", "none");
+    block.setAttribute("stroke", "#ff0000");
+    block.setAttribute("stroke-width", Theme.blockBorderSize);
+    block.setAttribute("rx", Theme.blockBorderSize);
+    block.setAttribute("ry", Theme.blockBorderSize);
+    block.setAttribute("stroke-linejoin", "round");
+    block.setAttribute("transform", `translate(${x},${y})`);   
+    svg.append(block);
   }
 
   drawArrows() 
@@ -126,9 +150,10 @@ export default class Context
         states[output_id].nb_outputs,
         states[input_id].current_input++,
         states[input_id].nb_inputs,
-        color
-      );
-      arrow.draw(svg!); 
+        color);
+
+      let depthAreas = this.layout.calculateDepthAreas(this, this.blocks);
+      arrow.draw(svg!, depthAreas); 
     
       // Register the mouse events
       let arrow_elem = arrow.getElement();
@@ -247,10 +272,10 @@ export default class Context
         lines.unshift(dbgInfo); // to debug
 
         if (!posXForDepth.has(depth)) {
-          posXForDepth.set(depth, 0);
+          posXForDepth.set(depth, 40);
         }
         let posX = posXForDepth.get(depth)!;
-        let posY = depth * 200;              // We will update it just after
+        let posY = depth * 200;                 // We will update it just after
 
         let block = new Block(currentBlockId, depth, posX, posY, lines);
         block.draw(svg!); 
@@ -314,7 +339,7 @@ export default class Context
     });
 
     this.blocks.forEach((block) => {
-      let y = 0;
+      let y = 40;
       for (let prevDepth = 0; prevDepth < block.depth; prevDepth++) {
         let maxHeight = maxHeightForDepth.get(prevDepth)!;
         y += maxHeight + 40;
