@@ -1,7 +1,6 @@
 const path = require('path');
 
 module.exports = {
-  entry: './src/index.ts', // Your main TypeScript file
   module: {
     rules: [
       {
@@ -16,7 +15,10 @@ module.exports = {
   },
   output: {
     filename: 'bblocks.js',
-    path: path.resolve(__dirname, 'dist')
+    path: path.resolve(__dirname, 'dist'),
+    library: 'bblocks',
+    libraryTarget: 'umd',
+    libraryExport: 'default'
   },
   optimization: {
     minimize: true,

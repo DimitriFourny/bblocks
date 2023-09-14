@@ -13,8 +13,6 @@ export default class Theme
 
   static arrowColor = "#007E93";
   static arrowThickness = "1.5";
-  static arrowValidColor = "#729D5A";
-  static arrowInvalidColor = "#B5555A";
   static arrowOverColor = "#FFAB70";
   static arrowOverThickness = "3";
 }

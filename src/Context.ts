@@ -6,6 +6,7 @@ import { Layout, DepthArea } from "./Layout";
 
 export default class Context 
 {
+  svgId: string;
   blocksLines: Array<Array<string>>;
   links: Array<Array<number|string>>;
   blocks: Map<number, Block>;
@@ -16,8 +17,9 @@ export default class Context
   backgroundElement: Element;
   layout: Layout;
 
-  constructor(blocksLines: Array<Array<string>>, links: Array<Array<number|string>>)
+  constructor(svgId: string, blocksLines: Array<Array<string>>, links: Array<Array<number|string>>)
   {
+    this.svgId = svgId;
     this.blocksLines = blocksLines;
     this.links = links;
     this.blocks = new Map<number, Block>;
