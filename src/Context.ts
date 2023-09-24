@@ -16,6 +16,7 @@ export default class Context
   viewBox: ViewBox;
   backgroundElement: Element;
   layout: Layout;
+  pinchDistance: number;
 
   constructor(svgId: string, blocksLines: Array<Array<string>>, links: Array<Array<number|string>>)
   {
@@ -29,6 +30,7 @@ export default class Context
     this.viewBox = new ViewBox(0, 0, 0, 0);
     this.backgroundElement = document.createElementNS("http://www.w3.org/2000/svg", "rect");
     this.layout = new Layout;
+    this.pinchDistance = 0;
   }
   
   svg() : SVGElement|null 
@@ -164,8 +166,8 @@ export default class Context
         return;
       }
 
-      arrow_elem.onmouseenter = this.onMouseEnterLine.bind(this);
-      arrow_elem.onmouseleave = this.onMouseLeaveLine.bind(this);
+      arrow_elem.onpointerenter = this.onPointerEnterLine.bind(this);
+      arrow_elem.onpointerleave = this.onPointerLeaveLine.bind(this);
 
       this.arrows.push(arrow);
     });
@@ -289,10 +291,10 @@ export default class Context
           console.error("Can't find block element id " + block.id);
           return;
         }
-        block_elem.onmousedown = this.onMouseDownBlock.bind(this); 
-        block_elem.onmouseup = this.onMouseUpBlock.bind(this); 
-        block_elem.onmouseenter = this.onMouseEnterBlock.bind(this); 
-        block_elem.onmouseleave = this.onMouseLeaveBlock.bind(this); 
+        block_elem.onpointerdown = this.onPointerDownBlock.bind(this); 
+        block_elem.onpointerup = this.onPointerUpBlock.bind(this); 
+        block_elem.onpointerenter = this.onPointerEnterBlock.bind(this); 
+        block_elem.onpointerleave = this.onPointerLeaveBlock.bind(this); 
 
         this.blocks.set(currentBlockId, block);
       }
@@ -350,17 +352,20 @@ export default class Context
       block.updatePosition(block.x, y);
     });
 
-    svg.onmousedown = this.onMouseDownSvg.bind(this); 
-    svg.onmouseup = this.onMouseUpSvg.bind(this); 
-    svg.onmousemove = this.onMouseMoveSvg.bind(this);
+    svg.onpointerdown = this.onPointerDownSvg.bind(this); 
+    svg.onpointerup = this.onPointerUpSvg.bind(this); 
+    svg.onpointermove = this.onPointerMoveSvg.bind(this);
     svg.onwheel = this.onWheelSvg.bind(this);
+    svg.ontouchmove = this.onTouchMoveSvg.bind(this);
+    svg.ontouchend = this.onTouchEndSvg.bind(this);
 
     this.drawArrows();
   }
 
   /** The drag and drop on a block is starting */
-  onMouseDownBlock(event: MouseEvent) 
+  onPointerDownBlock(event: MouseEvent) 
   {
+    event.preventDefault();
     if (event.button != 0) {
       // Not left click
       return;
@@ -375,8 +380,9 @@ export default class Context
   }
 
   /** The drag and drop on a block is finishing */
-  onMouseUpBlock(event: MouseEvent) 
+  onPointerUpBlock(event: MouseEvent) 
   {
+    event.preventDefault();
     if (event.button != 0) {
       // Not left click
       return;
@@ -385,8 +391,9 @@ export default class Context
     this.movingView = false;
   }
 
-  onMouseDownSvg(event: MouseEvent) 
+  onPointerDownSvg(event: MouseEvent) 
   {
+    event.preventDefault();
     if (event.button != 0) {
       // Not left click
       return;
@@ -397,8 +404,9 @@ export default class Context
     this.movingView = true;
   }
 
-  onMouseUpSvg(event: MouseEvent) 
+  onPointerUpSvg(event: MouseEvent) 
   {
+    event.preventDefault();
     if (event.button != 0) {
       // Not left click
       return;
@@ -407,10 +415,9 @@ export default class Context
   }
 
   /** The mouse is moving inside the SVG */
-  onMouseMoveSvg(event: MouseEvent) 
+  onPointerMoveSvg(event: MouseEvent) 
   {
     event.preventDefault();
-
     if (!this.elementMoving && !this.movingView) {
       return;
     }
@@ -450,6 +457,44 @@ export default class Context
     }
   }
 
+  onTouchMoveSvg(event: TouchEvent)
+  {
+    event.preventDefault();
+
+    if (event.touches.length === 2) {
+      // We try to zoom in or out
+      const touch1 = event.touches[0];
+      const touch2 = event.touches[1];
+      
+      const deltaX = touch1.clientX - touch2.clientX;
+      const deltaY = touch1.clientY - touch2.clientY;
+      const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+      
+      if (this.pinchDistance == 0) {
+        this.pinchDistance = distance;
+      }
+      if (!this.pinchDistance) {
+        return;
+      }
+
+      const midX = touch1.clientX + (touch2.clientX - touch1.clientX)/2;
+      const midY = touch1.clientY + (touch2.clientY - touch1.clientY)/2;
+      let zoomFactor = (distance / this.pinchDistance) * 5;
+
+      if (distance > this.pinchDistance) {
+        zoomFactor = -zoomFactor;
+      }
+
+      this.viewBox.zoomAt(this, midX, midY, zoomFactor);
+    }
+  }
+
+  onTouchEndSvg(event: TouchEvent)
+  {
+    event.preventDefault();
+    this.pinchDistance = 0;   
+  }
+
   /** The mouse is zooming inside the SVG */
   onWheelSvg(event: WheelEvent) 
   {
@@ -465,22 +510,27 @@ export default class Context
   }
 
   /** The mouse is on a block */
-  onMouseEnterBlock(event: MouseEvent) 
+  onPointerEnterBlock(event: MouseEvent) 
   {
+    event.preventDefault();
+
     let target = <HTMLElement> event.currentTarget;
     target.children[0].setAttribute("fill", Theme.blockOverBackgroundColor);
   }
 
   /** The mouse is not anymore on a block */
-  onMouseLeaveBlock(event: MouseEvent) 
+  onPointerLeaveBlock(event: MouseEvent) 
   {
+    event.preventDefault();
+
     let target = <HTMLElement> event.currentTarget;
     target.children[0].setAttribute("fill", Theme.blockBackgroundColor);
   }
 
   /** The mouse is on a line */
-  onMouseEnterLine(event: MouseEvent) 
+  onPointerEnterLine(event: MouseEvent) 
   {
+    event.preventDefault();
     let target = <HTMLElement> event.currentTarget;
 
     for (let i = 0; i < target.children.length; i++) {
@@ -494,8 +544,9 @@ export default class Context
   }
 
   /** The mouse is not anymore on a line */
-  onMouseLeaveLine(event: MouseEvent) 
+  onPointerLeaveLine(event: MouseEvent) 
   {
+    event.preventDefault();
     let target = <HTMLElement> event.currentTarget;
 
     const arrowId = parseInt(target.id.substring(1));
