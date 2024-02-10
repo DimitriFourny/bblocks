@@ -20,6 +20,7 @@ export class Layout {
 
   calculateDepthAreas(context: Context, blocks: Map<number, Block>) : Map<number, DepthArea>
   {
+    // Get the blocks per depth
     let blocksPerDepth = new Map<number, Array<Block>>;
     blocks.forEach((block) => {
       let blocks = blocksPerDepth.get(block.depth);
@@ -63,7 +64,6 @@ export class Layout {
       });
 
       areaPerDepth.set(depth, area);
-      // context.addDebugRect(area.x, area.y, area.width, area.height); // to debug
     });
 
     return areaPerDepth;

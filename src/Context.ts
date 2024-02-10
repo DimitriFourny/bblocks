@@ -17,6 +17,7 @@ export default class Context
   backgroundElement: Element;
   layout: Layout;
   pinchDistance: number;
+  depthAreas: Map<number, DepthArea>;
 
   constructor(svgId: string, blocksLines: Array<Array<string>>, links: Array<Array<number|string>>)
   {
@@ -31,6 +32,7 @@ export default class Context
     this.backgroundElement = document.createElementNS("http://www.w3.org/2000/svg", "rect");
     this.layout = new Layout;
     this.pinchDistance = 0;
+    this.depthAreas = new Map<number, DepthArea>;
   }
   
   svg() : SVGElement|null 
@@ -76,7 +78,7 @@ export default class Context
     this.backgroundElement.setAttribute("height", height.toString());
   }
 
-  addDebugRect(x: number, y: number, width: number, height:number) 
+  addDebugRect(x: number, y: number, width: number, height:number, color:string = "#ff0000") 
   {
     let svg = this.svg();
     if (!svg) {
@@ -85,10 +87,11 @@ export default class Context
     }
 
     let block = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    block.setAttribute("class", "debug_rect");
     block.setAttribute("width", width.toString());
     block.setAttribute("height", height.toString());
     block.setAttribute("fill", "none");
-    block.setAttribute("stroke", "#ff0000");
+    block.setAttribute("stroke", color);
     block.setAttribute("stroke-width", Theme.blockBorderSize);
     block.setAttribute("rx", Theme.blockBorderSize);
     block.setAttribute("ry", Theme.blockBorderSize);
@@ -156,8 +159,7 @@ export default class Context
         states[input_id].nb_inputs,
         color);
 
-      let depthAreas = this.layout.calculateDepthAreas(this, this.blocks);
-      arrow.draw(svg!, depthAreas); 
+      arrow.draw(svg!, this.depthAreas); 
     
       // Register the mouse events
       let arrow_elem = arrow.getElement();
@@ -333,7 +335,7 @@ export default class Context
       break;
     }
 
-    // Update the blocs Y to fit
+    // Update the blocks Y to fit
     let maxHeightForDepth = new Map<number, number>;
     this.blocks.forEach((block) => {
       let maxHeight = maxHeightForDepth.get(block.depth);
@@ -352,14 +354,106 @@ export default class Context
       block.updatePosition(block.x, y);
     });
 
+
+    // Update the depth area to be centered relatively to its parents
+    // First we calculate the block parents of each area
+    let areaParents = new Map<number, Array<number>>();
+    let nbDepths = posXForDepth.size;
+    for (let depth = 0; depth < nbDepths; depth++) {
+      areaParents.set(depth, new Array<number>());
+    }
+
+    this.links.forEach(link => {
+      const ouput_id = <number>link[0];
+      const input_id = <number>link[1];
+
+      const parentBlock = this.blocks.get(ouput_id)!;
+      const parentDepth = this.blocks.get(ouput_id)!.depth;
+      const childDepth = this.blocks.get(input_id)!.depth;
+      
+      if (parentDepth > childDepth) {
+        return;
+      }
+      
+      let blocks = areaParents.get(childDepth);
+      if (!blocks) {
+        areaParents.set(childDepth, [parentBlock.id]);
+        return;
+      }
+
+      if (!blocks.includes(parentBlock.id)) {
+        blocks.push(parentBlock.id);
+        areaParents.set(childDepth, blocks);
+      }
+    });
+
+    // Now we will center each area relatively to the block parents rectangle
+    this.depthAreas = this.layout.calculateDepthAreas(this, this.blocks);
+    this.blocks.forEach((block) => {
+      let parents = areaParents.get(block.depth);
+      if (!parents || !parents.length) {
+        return;
+      }
+
+      let smallestX: number|undefined = undefined;
+      let smallestY: number|undefined = undefined;
+      let biggestX: number|undefined = undefined;
+      let biggestY: number|undefined = undefined;
+
+      parents.forEach((parent) => {
+        let parentBlock = this.blocks.get(parent);
+        if (!parentBlock) {
+          return;
+        }
+
+        if (smallestX === undefined) {
+          smallestX = parentBlock.x;
+          smallestY = parentBlock.y;
+          biggestX = parentBlock.x  + parentBlock.width;
+          biggestY = parentBlock.y + parentBlock.height;
+          return;
+        }
+
+        smallestX = Math.min(smallestX, parentBlock.x);
+        smallestY = Math.min(smallestY!, parentBlock.y);
+        biggestX = Math.max(biggestX!, parentBlock.x + parentBlock.width);
+        biggestY = Math.max(biggestY!, parentBlock.y + parentBlock.height);
+      });
+
+      // this.addDebugRect(smallestX!, smallestY!, biggestX! - smallestX!, biggestY! - smallestY!); 
+
+      let areaParentCenter = smallestX! + (biggestX! - smallestX!) / 2;
+      // this.addDebugRect(areaParentCenter - 5, smallestY! - 5, 10, 10, "#0000ff"); 
+
+      let area = this.depthAreas.get(block.depth)!;
+      let areaCenter = area.x + area.width / 2;
+      // this.addDebugRect(areaCenter - 5, block.y - 5, 10, 10, "#00ff00"); 
+      
+      let areaOffset = areaParentCenter - areaCenter;
+      // console.log(areaParentCenter, areaCenter, areaOffset);
+
+      block.updatePosition(block.x + areaOffset, block.y);
+    });
+
+    // TODO: align the depth area to the block parent, not each block!
+    // So calculate parents of area, not of the block
+
+
+    // Calculate the depth areas 
+    this.depthAreas = this.layout.calculateDepthAreas(this, this.blocks);
+    // this.depthAreas.forEach((area, depth) => {
+    //   this.addDebugRect(area.x, area.y, area.width, area.height); 
+    // });
+
+    this.drawArrows();
+
+    // Everything has beeen drawn, add the possibility to move
     svg.onpointerdown = this.onPointerDownSvg.bind(this); 
     svg.onpointerup = this.onPointerUpSvg.bind(this); 
     svg.onpointermove = this.onPointerMoveSvg.bind(this);
     svg.onwheel = this.onWheelSvg.bind(this);
     svg.ontouchmove = this.onTouchMoveSvg.bind(this);
     svg.ontouchend = this.onTouchEndSvg.bind(this);
-
-    this.drawArrows();
   }
 
   /** The drag and drop on a block is starting */
