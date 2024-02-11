@@ -542,6 +542,7 @@ export default class Context
       let x = block.x + event.movementX / scaleWidth; 
       let y = block.y + event.movementY / scaleHeight;
       block.updatePosition(x, y);
+      this.depthAreas = this.layout.calculateDepthAreas(this, this.blocks);
       this.drawArrows();
     } else if (this.movingView) {
       this.viewBox.x -= event.movementX / scaleWidth; 
