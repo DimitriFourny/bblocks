@@ -18,6 +18,7 @@ export default class Context
   layout: Layout;
   pinchDistance: number;
   depthAreas: Map<number, DepthArea>;
+  debug: boolean;
 
   constructor(svgId: string, blocksLines: Array<Array<string>>, links: Array<Array<number|string>>)
   {
@@ -33,6 +34,7 @@ export default class Context
     this.layout = new Layout;
     this.pinchDistance = 0;
     this.depthAreas = new Map<number, DepthArea>;
+    this.debug = false;
   }
   
   svg() : SVGElement|null 
@@ -274,8 +276,11 @@ export default class Context
 
         // Render it
         let lines = this.blocksLines[currentBlockId];
-        let dbgInfo = `id: ${currentBlockId.toString()} | depth: ${depth.toString()}`;
-        lines.unshift(dbgInfo); // to debug
+
+        if (this.debug) {
+          let dbgInfo = `id: ${currentBlockId.toString()} | depth: ${depth.toString()}`;
+          lines.unshift(dbgInfo);
+        }
 
         if (!posXForDepth.has(depth)) {
           posXForDepth.set(depth, 40);
@@ -420,30 +425,23 @@ export default class Context
         biggestY = Math.max(biggestY!, parentBlock.y + parentBlock.height);
       });
 
-      // this.addDebugRect(smallestX!, smallestY!, biggestX! - smallestX!, biggestY! - smallestY!); 
 
       let areaParentCenter = smallestX! + (biggestX! - smallestX!) / 2;
-      // this.addDebugRect(areaParentCenter - 5, smallestY! - 5, 10, 10, "#0000ff"); 
-
       let area = this.depthAreas.get(block.depth)!;
       let areaCenter = area.x + area.width / 2;
-      // this.addDebugRect(areaCenter - 5, block.y - 5, 10, 10, "#00ff00"); 
-      
       let areaOffset = areaParentCenter - areaCenter;
-      // console.log(areaParentCenter, areaCenter, areaOffset);
 
       block.updatePosition(block.x + areaOffset, block.y);
     });
 
-    // TODO: align the depth area to the block parent, not each block!
-    // So calculate parents of area, not of the block
-
-
     // Calculate the depth areas 
     this.depthAreas = this.layout.calculateDepthAreas(this, this.blocks);
-    // this.depthAreas.forEach((area, depth) => {
-    //   this.addDebugRect(area.x, area.y, area.width, area.height); 
-    // });
+
+    if (this.debug) {
+      this.depthAreas.forEach((area, depth) => {
+        this.addDebugRect(area.x, area.y, area.width, area.height); 
+      });
+    }
 
     this.drawArrows();
 
