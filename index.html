@@ -19,70 +19,92 @@
 
 let blocksLines = [
   [
-    "push    rbp",
-    "mov     rbp, rsp",
-    "sub     rsp, 20h",
-    "mov     [rbp+s1], rdi",
-    "mov     [rbp+var_4], 0",
-    "jmp     short loc_400EBB"
+    "loop(int, int*, int):",
+    "      test    edi, edi",
+    "      jle     .LBB0_9],",
   ],
   [
-    "loc_400EBB:",
-    "mov     eax, cs:num_users",
-    "cmp     [rbp+var_4], eax",
-    "jl      short loc_400E8E",
+    "loop(int, int*, int):@3",
+    "      mov     eax, edi",
+    "      mov     rcx, -1",
+    "      xor     edi, edi",
+    "      jmp     .LBB0_2",
   ],
   [
-    "loc_400E8E:",
-    "mov     eax, [rbp+var_4]",
-    "cdqe",
-    "mov     rax, ds:user_list[rax*8]",
-    "lea     rdx, [rax+0Ch]",
-    "mov     rax, [rbp+s1]",
-    "mov     rsi, rdx        ; s2",
-    "mov     rdi, rax        ; s1",
-    "call    _strcmp",
-    "test    eax, eax",
-    "jnz     short loc_400EB7",
+    ".LBB0_2:",
+    "      cmp     edx, 3",
+    "      je      .LBB0_7",
   ],
   [
-    "mov     eax, [rbp+var_4]",
-    "jmp     short locret_400EE1",
+    ".LBB0_7:",
+    "      mov     r8, rdi",
+    "      imul    r8, rdi",
   ],
   [
-    "mov     rax, [rbp+s1]",
-    "mov     rsi, rax",
-    "mov     edi, offset aInvalidIdS ; 'Invalid id : <%s>\\n'",
-    "mov     eax, 0",
-    "call    _printf",
-    "mov     eax, 0FFFFFFFFh",
+    ".LBB0_2:@21",
+    "      mov     r8, rcx",
+    "      cmp     edx, 2",
+    "      je      .LBB0_8",
   ],
   [
-    "loc_400EB7:",
-    "add     [rbp+var_4], 1",
+    ".LBB0_2:@24",
+    "      cmp     edx, 1",
+    "      jne     .LBB0_5",
   ],
   [
-    "locret_400EE1:",
-    "leave",
-    "retn",
+    ".LBB0_2:@26",
+    "      lea     r8, [rdi + rdi]",
+    "      jmp     .LBB0_8",
   ],
+  [
+    ".LBB0_5:",
+    "      xor     r8d, r8d",
+    "      jmp     .LBB0_8",
+  ],
+  [
+    ".LBB0_8:",
+    "      movsxd  r8, r8d",
+    "      inc     dword ptr [rsi + 4*r8]",
+    "      inc     dword ptr [rsi + 4*rdi]",
+    "      inc     rdi",
+    "      add     rcx, 3",
+    "      cmp     rax, rdi",
+    "      je      .LBB0_9",
+  ],
+  [
+    ".LBB0_9:",
+    "      ret",
+  ]
 ];
 
 let arrowValidColor = "#729D5A";
 let arrowInvalidColor = "#B5555A";
 
 let links = [
-  [0, 1],
-  [1, 2, arrowValidColor],
-  [1, 4, arrowInvalidColor],
-  [2, 3, arrowInvalidColor],
-  [2, 5, arrowValidColor],
-  [3, 6],
-  [4, 6],
-  [5, 1],
+  [0, 1, arrowInvalidColor],
+  [0, 8],
+  
+  [1, 2],
+  [1, 9],
+
+  [2, 3],
+  [2, 4],
+  
+  // [3, 9],
+
+  [4, 5],
+  [4, 9],
+
+  [5, 6],
+  [5, 7],
+
+  // [6, 9],
+  // [7, 9]
 ];
 
-bblocks.draw("svg", blocksLines, links);
+let svg = document.getElementById("svg");
+let context = new bblocks.new(svg, blocksLines, links);
+context.draw();
     </script>
   </body>
 </html>

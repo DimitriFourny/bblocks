@@ -24,10 +24,6 @@ export default class ViewBox
   zoomAt(context: Context, offsetX: number, offsetY: number, deltaY: number) 
   {
     // Get SVG info
-    let svg = context.svg();
-    if (!svg) {
-      return;
-    }
     let svgWidth = context.svgWidth();
     let svgHeight = context.svgHeight();
 
@@ -50,7 +46,7 @@ export default class ViewBox
       this.y = y;
       this.width = width;
       this.height = height;
-      this.updateViewBox(svg);
+      this.updateViewBox(context.svg);
       context.moveBackground(this.x, this.y, this.width, this.height);
     }
   }

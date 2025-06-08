@@ -6,7 +6,7 @@ import { Layout, DepthArea } from "./Layout";
 
 export default class Context 
 {
-  svgId: string;
+  svg: SVGAElement;
   blocksLines: Array<Array<string>>;
   links: Array<Array<number|string>>;
   blocks: Map<number, Block>;
@@ -20,9 +20,9 @@ export default class Context
   depthAreas: Map<number, DepthArea>;
   debug: boolean;
 
-  constructor(svgId: string, blocksLines: Array<Array<string>>, links: Array<Array<number|string>>)
+  constructor(svg: SVGAElement, blocksLines: Array<Array<string>>, links: Array<Array<number|string>>)
   {
-    this.svgId = svgId;
+    this.svg = svg;
     this.blocksLines = blocksLines;
     this.links = links;
     this.blocks = new Map<number, Block>;
@@ -36,20 +36,10 @@ export default class Context
     this.depthAreas = new Map<number, DepthArea>;
     this.debug = false;
   }
-  
-  svg() : SVGElement|null 
-  {
-    return <SVGElement|null> document.getElementById("svg");
-  }
 
   svgWidth() : number
   {
-    let svg = this.svg();
-    if (!svg) {
-      return 0;
-    }
-
-    let svgWidth : string|null = svg.getAttribute("width");
+    let svgWidth : string|null = this.svg.getAttribute("width");
     if (!svgWidth) {
       return 0;
     }
@@ -59,12 +49,7 @@ export default class Context
 
   svgHeight() : number
   {
-    let svg = this.svg();
-    if (!svg) {
-      return 0;
-    }
-
-    let svgHeight : string|null = svg.getAttribute("height");
+    let svgHeight : string|null = this.svg.getAttribute("height");
     if (!svgHeight) {
       return 0;
     }
@@ -82,12 +67,6 @@ export default class Context
 
   addDebugRect(x: number, y: number, width: number, height:number, color:string = "#ff0000") 
   {
-    let svg = this.svg();
-    if (!svg) {
-      console.error("Can't find HTML element #svg");
-      return;
-    }
-
     let block = document.createElementNS("http://www.w3.org/2000/svg", "rect");
     block.setAttribute("class", "debug_rect");
     block.setAttribute("width", width.toString());
@@ -99,19 +78,13 @@ export default class Context
     block.setAttribute("ry", Theme.blockBorderSize);
     block.setAttribute("stroke-linejoin", "round");
     block.setAttribute("transform", `translate(${x},${y})`);   
-    svg.append(block);
+    this.svg.append(block);
   }
 
   drawArrows() 
   {
-    let svg = this.svg();
-    if (!svg) {
-      console.error("Can't find HTML element #svg");
-      return;
-    }
-
     // Remove all arrows
-    let existingArrows = svg.querySelectorAll(".arrow");
+    let existingArrows = this.svg.querySelectorAll(".arrow");
     existingArrows.forEach(arrow => {
       arrow.remove();
     });
@@ -161,7 +134,7 @@ export default class Context
         states[input_id].nb_inputs,
         color);
 
-      arrow.draw(svg!, this.depthAreas); 
+      arrow.draw(this.svg, this.depthAreas); 
     
       // Register the mouse events
       let arrow_elem = arrow.getElement();
@@ -179,16 +152,10 @@ export default class Context
 
   draw()
   {
-    let svg = this.svg();
-    if (!svg) {
-      console.error("Can't find HTML element #svg");
-      return;
-    }
-
     const imgWidth = window.innerWidth;
     const imgHeight = window.innerHeight;
-    svg.setAttribute("width", imgWidth.toString());
-    svg.setAttribute("height", imgHeight.toString());
+    this.svg.setAttribute("width", imgWidth.toString());
+    this.svg.setAttribute("height", imgHeight.toString());
 
     // Update the viewbox
     this.viewBox.width = imgWidth;
@@ -204,7 +171,7 @@ export default class Context
     bg_pattern.setAttribute("width", "32");
     bg_pattern.setAttribute("height", "32");
     bg_pattern.setAttribute("patternUnits", "userSpaceOnUse");
-    svg.appendChild(bg_pattern); 
+    this.svg.appendChild(bg_pattern); 
     
     let bg_circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
     bg_circle.setAttribute("cx", "1");
@@ -215,12 +182,12 @@ export default class Context
 
     this.backgroundElement.setAttribute("fill", "url(#p1)");
     this.moveBackground(0, 0, imgWidth, imgHeight);
-    svg.appendChild(this.backgroundElement);
+    this.svg.appendChild(this.backgroundElement);
 
     // Now a bit of CSS style
     let style = document.createElementNS("http://www.w3.org/2000/svg", "style");
     style.innerHTML = "path { stroke-dasharray: 4 1; }";
-    svg.appendChild(style);
+    this.svg.appendChild(style);
 
     // Create a blocks tree
     interface BlockLinksStatus {
@@ -289,7 +256,7 @@ export default class Context
         let posY = depth * 200;                 // We will update it just after
 
         let block = new Block(currentBlockId, depth, posX, posY, lines);
-        block.draw(svg!); 
+        block.draw(this.svg); 
 
         posXForDepth.set(depth, posX + block.width + 40);
  
@@ -446,12 +413,12 @@ export default class Context
     this.drawArrows();
 
     // Everything has beeen drawn, add the possibility to move
-    svg.onpointerdown = this.onPointerDownSvg.bind(this); 
-    svg.onpointerup = this.onPointerUpSvg.bind(this); 
-    svg.onpointermove = this.onPointerMoveSvg.bind(this);
-    svg.onwheel = this.onWheelSvg.bind(this);
-    svg.ontouchmove = this.onTouchMoveSvg.bind(this);
-    svg.ontouchend = this.onTouchEndSvg.bind(this);
+    this.svg.onpointerdown = this.onPointerDownSvg.bind(this); 
+    this.svg.onpointerup = this.onPointerUpSvg.bind(this); 
+    this.svg.onpointermove = this.onPointerMoveSvg.bind(this);
+    this.svg.onwheel = this.onWheelSvg.bind(this);
+    this.svg.ontouchmove = this.onTouchMoveSvg.bind(this);
+    this.svg.ontouchend = this.onTouchEndSvg.bind(this);
   }
 
   /** The drag and drop on a block is starting */
@@ -514,12 +481,6 @@ export default class Context
       return;
     }
 
-    let svg = this.svg();
-    if (!svg) {
-      console.error("Can't find HTML element #svg");
-      return;
-    }
-
     let svgWidth = this.svgWidth();
     let svgHeight = this.svgHeight();
 
@@ -545,7 +506,7 @@ export default class Context
     } else if (this.movingView) {
       this.viewBox.x -= event.movementX / scaleWidth; 
       this.viewBox.y -= event.movementY / scaleHeight;
-      this.viewBox.updateViewBox(svg);
+      this.viewBox.updateViewBox(this.svg);
       this.moveBackground(this.viewBox.x, this.viewBox.y, this.viewBox.width, this.viewBox.height);
     }
   }
@@ -592,13 +553,6 @@ export default class Context
   onWheelSvg(event: WheelEvent) 
   {
     event.preventDefault();
-
-    let svg = this.svg();
-    if (!svg) {
-      console.error("Can't find HTML element #svg");
-      return;
-    }
-
     this.viewBox.zoomAt(this, event.offsetX, event.offsetY, event.deltaY);
   }
 
