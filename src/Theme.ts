@@ -1,18 +1,15 @@
+import type { Theme } from './types';
 
-export default class Theme 
-{
-  static svgBackgroundColor = "#fff";
-
-  static blockBackgroundColor = "#fff";
-  static blockOverBackgroundColor = "#f1f1f1";
-  static blockBorderColor = "#46484A";
-  static blockBorderSize = "1.5";
-  static blockFontColor = "#000";
-  static blockFontFamily = "sans-serif";
-  static blockFontSize = "12px";
-
-  static arrowColor = "#007E93";
-  static arrowThickness = "1.5";
-  static arrowOverColor = "#FFAB70";
-  static arrowOverThickness = "3";
-}
+export const defaultTheme: Readonly<Theme> = Object.freeze({
+  background: '#f8fafc',
+  grid: '#d5dce5',
+  nodeBackground: '#ffffff',
+  nodeBorder: '#b8c5d6',
+  text: '#25344b',
+  edge: '#60758f',
+  accent: '#2563eb',
+  fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
+  fontSize: 12,
+  lineHeight: 20,
+  padding: 16,
+});

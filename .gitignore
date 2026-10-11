@@ -5,4 +5,3 @@ dist/*
 
 # NPM stuff
 node_modules
-package-lock.json

@@ -1,53 +1,37 @@
-import Context from "./Context";
+import type { Bounds, Point } from './types';
 
+export default class ViewBox {
+  x = 0;
+  y = 0;
+  width = 800;
+  height = 600;
+  private fittedWidth = 800;
 
-export default class ViewBox 
-{
-  x: number;
-  y: number;
-  width: number;
-  height: number;
+  fit(bounds: Bounds, width: number, height: number): void {
+    const ratio = width / height;
+    this.width = Math.max(bounds.width + 80, (bounds.height + 80) * ratio, 160);
+    this.height = this.width / ratio;
+    this.x = bounds.x + bounds.width / 2 - this.width / 2;
+    this.y = bounds.y + bounds.height / 2 - this.height / 2;
+    this.fittedWidth = this.width;
+  }
 
-  constructor(x: number, y: number, width: number, height: number) 
-  {
-    this.x = x;
-    this.y = y;
+  resize(width: number, height: number): void {
+    const centerY = this.y + this.height / 2;
+    this.height = this.width * height / width;
+    this.y = centerY - this.height / 2;
+  }
+
+  zoom(factor: number, anchor: Point): void {
+    const width = Math.min(this.fittedWidth * 20, Math.max(this.fittedWidth / 100, this.width / factor));
+    const scale = width / this.width;
+    this.x = anchor.x - (anchor.x - this.x) * scale;
+    this.y = anchor.y - (anchor.y - this.y) * scale;
     this.width = width;
-    this.height = height;
+    this.height *= scale;
   }
 
-  updateViewBox(svg: SVGElement)
-  {
-    svg.setAttribute("viewBox", `${this.x} ${this.y} ${this.width} ${this.height}`);
-  }
-
-  zoomAt(context: Context, offsetX: number, offsetY: number, deltaY: number) 
-  {
-    // Get SVG info
-    let svgWidth = context.svgWidth();
-    let svgHeight = context.svgHeight();
-
-    // Calculate the new positions
-    let mx = offsetX;
-    let my = offsetY;    
-    let dw = svgWidth * Math.sign(deltaY) * 0.01;
-    let dh = svgHeight * Math.sign(deltaY) * 0.01;
-    let dx = dw * mx/svgWidth;
-    let dy = dh * my/svgHeight;
-
-    let x = this.x - dx;
-    let y = this.y - dy;
-    let width = this.width + dw;
-    let height = this.height + dh;
-
-    if (width > 200 && height > 200 && width < 2000 && height < 2000) {
-      // This zoom is acceptable
-      this.x = x;
-      this.y = y;
-      this.width = width;
-      this.height = height;
-      this.updateViewBox(context.svg);
-      context.moveBackground(this.x, this.y, this.width, this.height);
-    }
+  apply(svg: SVGSVGElement): void {
+    svg.setAttribute('viewBox', `${this.x} ${this.y} ${this.width} ${this.height}`);
   }
 }

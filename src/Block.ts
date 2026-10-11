@@ -1,108 +1,56 @@
-import Theme from "./Theme";
+import { element } from './svg';
+import type { GraphNode, Theme } from './types';
 
-export default class Block 
-{
-  static next_id = 0;
-  id: number;
-  depth: number;
-  x: number;
-  y: number;
-  lines: Array<string>;
-  width: number;
-  height: number;
-  fontFamily: string;
-  paddingTop: number;
-  paddingBottom: number;
-  paddingLeft: number;
+/** Owns its SVG elements; no document-global IDs or queries. */
+export default class Block {
+  readonly element: SVGGElement;
+  readonly width: number;
+  readonly height: number;
 
-  constructor(id: number, depth: number, x: number, y: number, lines: Array<string>, width=0, height=0) 
-  {
-    this.id = id;
-    this.depth = depth;
-    this.x = x;
-    this.y = y;
-    this.lines = lines;
-    this.width = width;
-    this.height = height;
-    this.fontFamily = "Menlo";
-    this.paddingTop = 20;
-    this.paddingBottom = 10;
-    this.paddingLeft = 10;
-  }
-
-  draw(svg: SVGElement) 
-  {
-    let group = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    group.setAttribute("id", "b"+this.id);
-    group.setAttribute("transform", `translate(${this.x},${this.y})`);   
-    svg.appendChild(group);
-
-    // Create the text first to know the max width
-    let textX = this.paddingLeft;
-    let textY = this.paddingTop;
-
-    let maxTextWidth = 0;
-    let minBoxHeight = 2*this.paddingBottom;
-    let firstText: SVGTextElement | null = null;
-
-    this.lines.forEach((line) => {
-      let text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-      if (!firstText) {
-        firstText = text;
-      }
-
-      text.setAttribute("font-family", Theme.blockFontFamily);
-      text.setAttribute("font-size", Theme.blockFontSize);
-      text.setAttribute("fill", Theme.blockFontColor);
+  constructor(parent: SVGGElement, node: GraphNode, theme: Theme, interactive: boolean) {
+    const document = parent.ownerDocument;
+    this.element = element(document, 'g', {
+      class: 'bb-node', 'data-node-id': node.id,
+      role: interactive ? 'button' : 'group',
+      'aria-label': node.lines.join('\n') || node.id,
+    });
+    if (interactive) {
+      this.element.setAttribute('tabindex', '0');
+      this.element.setAttribute('aria-pressed', 'false');
+    }
+    parent.append(this.element);
+    const title = element(document, 'title');
+    title.textContent = node.id;
+    this.element.append(title);
+    let textWidth = 0;
+    node.lines.forEach((line, index) => {
+      const text = element(document, 'text', {
+        x: theme.padding,
+        y: theme.padding + theme.fontSize + index * theme.lineHeight,
+        fill: index === 0 ? theme.accent : theme.text,
+        'font-family': theme.fontFamily, 'font-size': theme.fontSize,
+        'font-weight': index === 0 ? '600' : '400',
+        'xml:space': 'preserve',
+      });
+      text.style.whiteSpace = 'pre';
       text.textContent = line;
-
-      text.setAttribute("x", textX.toString());
-      text.setAttribute("y", textY.toString());
-
-      group.appendChild(text);
-      const bbox = text.getBBox();
-      textY += bbox.height;
-
-      minBoxHeight += bbox.height;
-      if (bbox.width > maxTextWidth) {
-        maxTextWidth = bbox.width;
-      }
-    });   
-
-    if (!this.height) {
-      this.height = minBoxHeight;
-    }
-    if (!this.width) {
-      this.width = maxTextWidth + 2*this.paddingLeft;
-    }
-
-    // Block background
-    let block = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-    block.setAttribute("width", this.width.toString());
-    block.setAttribute("height", this.height.toString());
-    block.setAttribute("fill", Theme.blockBackgroundColor);
-    block.setAttribute("stroke", Theme.blockBorderColor);
-    block.setAttribute("stroke-width", Theme.blockBorderSize);
-    block.setAttribute("rx", Theme.blockBorderSize);
-    block.setAttribute("ry", Theme.blockBorderSize);
-    block.setAttribute("stroke-linejoin", "round");
-    group.prepend(block);
+      this.element.append(text);
+      textWidth = Math.max(textWidth, text.getComputedTextLength());
+    });
+    this.width = Math.max(120, Math.ceil(textWidth) + 2 * theme.padding);
+    this.height = Math.max(1, node.lines.length) * theme.lineHeight + 2 * theme.padding;
+    this.element.prepend(element(document, 'rect', {
+      width: this.width, height: this.height, rx: 7,
+      fill: theme.nodeBackground, stroke: theme.nodeBorder, 'stroke-width': 1.5,
+    }));
   }
 
-  getElement()
-  {
-    return document.getElementById("b" + this.id);
+  position(x: number, y: number): void {
+    this.element.setAttribute('transform', `translate(${x} ${y})`);
   }
 
-  updatePosition(x: number, y: number) 
-  {
-    let block_elem = this.getElement();
-    if (!block_elem) {
-      return;
-    }
-
-    this.x = x;
-    this.y = y;
-    block_elem.setAttribute("transform", `translate(${x},${y})`);   
+  select(selected: boolean): void {
+    this.element.classList.toggle('bb-selected', selected);
+    if (this.element.hasAttribute('aria-pressed')) this.element.setAttribute('aria-pressed', String(selected));
   }
 }

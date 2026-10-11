@@ -1,110 +1,82 @@
-<html>
+<!doctype html>
+<html lang="en">
   <head>
-    <title>BBlocks JS framework</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark">
+    <meta name="description" content="Explore basic-block graphs with BBlocks, a lightweight SVG graph viewer.">
+    <title>BBlocks — Basic block viewer</title>
+    <link rel="stylesheet" href="./demo.css">
+    <script src="./dist/bblocks.js" defer></script>
+    <script src="./demo.js" defer></script>
   </head>
-  <style>
-    svg text, svg rect {
-      -webkit-user-select: none;
-       -moz-user-select: none;
-        -ms-user-select: none;
-            user-select: none;
-    }
-  </style>
   <body>
-    <svg id="svg"></svg>
-    <script src="./dist/bblocks.js"></script>
-    <script>
+    <main class="workspace">
+      <header class="page-header">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">BB</span>
+          <div>
+            <h1>BBlocks</h1>
+            <p>Basic block viewer</p>
+          </div>
+        </div>
+        <span class="header-note">Typed data. Native SVG. No framework.</span>
+      </header>
 
-// TODO: test with bigger graph! 
+      <section class="viewer" aria-label="Basic block graph workspace">
+        <div class="toolbar" role="group" aria-label="Graph controls">
+          <div class="sample-control">
+            <label for="sample">Sample graph</label>
+            <select id="sample">
+              <option value="branch">Branch + merge</option>
+              <option value="loop">Loop</option>
+              <option value="disconnected">Disconnected</option>
+              <option value="large">Large graph · 72 blocks</option>
+              <option value="custom" disabled>Custom JSON</option>
+            </select>
+          </div>
+          <div class="view-controls" role="group" aria-label="Viewport controls">
+            <button type="button" id="fit" title="Fit all blocks into the viewport">Fit graph</button>
+            <button type="button" id="zoom-out" aria-label="Zoom out" title="Zoom out">−</button>
+            <button type="button" id="zoom-in" aria-label="Zoom in" title="Zoom in">+</button>
+            <button type="button" id="relayout" title="Remeasure blocks and run layout again">Relayout</button>
+            <button type="button" id="download" class="primary">Download SVG</button>
+          </div>
+        </div>
 
-let blocksLines = [
-  [
-    "loop(int, int*, int):",
-    "      test    edi, edi",
-    "      jle     .LBB0_9],",
-  ],
-  [
-    "loop(int, int*, int):@3",
-    "      mov     eax, edi",
-    "      mov     rcx, -1",
-    "      xor     edi, edi",
-    "      jmp     .LBB0_2",
-  ],
-  [
-    ".LBB0_2:",
-    "      cmp     edx, 3",
-    "      je      .LBB0_7",
-  ],
-  [
-    ".LBB0_7:",
-    "      mov     r8, rdi",
-    "      imul    r8, rdi",
-  ],
-  [
-    ".LBB0_2:@21",
-    "      mov     r8, rcx",
-    "      cmp     edx, 2",
-    "      je      .LBB0_8",
-  ],
-  [
-    ".LBB0_2:@24",
-    "      cmp     edx, 1",
-    "      jne     .LBB0_5",
-  ],
-  [
-    ".LBB0_2:@26",
-    "      lea     r8, [rdi + rdi]",
-    "      jmp     .LBB0_8",
-  ],
-  [
-    ".LBB0_5:",
-    "      xor     r8d, r8d",
-    "      jmp     .LBB0_8",
-  ],
-  [
-    ".LBB0_8:",
-    "      movsxd  r8, r8d",
-    "      inc     dword ptr [rsi + 4*r8]",
-    "      inc     dword ptr [rsi + 4*rdi]",
-    "      inc     rdi",
-    "      add     rcx, 3",
-    "      cmp     rax, rdi",
-    "      je      .LBB0_9",
-  ],
-  [
-    ".LBB0_9:",
-    "      ret",
-  ]
-];
+        <div class="graph-canvas">
+          <svg id="graph" xmlns="http://www.w3.org/2000/svg" tabindex="0"
+               aria-label="Interactive basic block graph" aria-describedby="navigation-help"></svg>
+          <p id="startup-error" class="startup-error" role="alert" hidden></p>
+        </div>
 
-let arrowValidColor = "#729D5A";
-let arrowInvalidColor = "#B5555A";
+        <footer class="graph-footer">
+          <div class="graph-status" role="status" aria-live="polite" aria-atomic="true">
+            <span id="counts">Loading graph…</span>
+            <span class="status-divider" aria-hidden="true"></span>
+            <span id="selection">No block selected</span>
+          </div>
+          <p id="navigation-help">Drag to pan · scroll or pinch to zoom · focus graph for keyboard controls</p>
+        </footer>
+      </section>
 
-let links = [
-  [0, 1, arrowInvalidColor],
-  [0, 8],
-  
-  [1, 2],
-  [1, 9],
-
-  [2, 3],
-  [2, 4],
-  
-  // [3, 9],
-
-  [4, 5],
-  [4, 9],
-
-  [5, 6],
-  [5, 7],
-
-  // [6, 9],
-  // [7, 9]
-];
-
-let svg = document.getElementById("svg");
-let context = new bblocks.new(svg, blocksLines, links);
-context.draw();
-    </script>
+      <details class="editor-panel">
+        <summary><span>Edit graph JSON</span><span class="summary-hint">Bring your own blocks and edges</span></summary>
+        <div class="editor-content">
+          <p id="editor-help">Each block has an <code>id</code> and text <code>lines</code>. Edges connect IDs using <code>from</code> and <code>to</code>, with optional <code>label</code> and <code>color</code>.</p>
+          <label for="graph-json">Graph data</label>
+          <textarea id="graph-json" rows="16" spellcheck="false" autocapitalize="off" autocomplete="off"
+                    aria-describedby="editor-help editor-error"></textarea>
+          <div class="editor-actions">
+            <button type="button" id="apply" class="primary">Apply JSON</button>
+            <p class="editor-note">Invalid data leaves the current graph untouched.</p>
+          </div>
+          <p id="editor-error" class="error-message" role="alert" hidden></p>
+          <p id="editor-success" class="success-message" role="status" hidden></p>
+        </div>
+      </details>
+      <p class="page-note">Explore control flow, not just a picture. Select a block to inspect its ID; export the complete graph at any zoom level.</p>
+      <noscript><p class="error-message">JavaScript is required to run this interactive demo.</p></noscript>
+    </main>
   </body>
 </html>

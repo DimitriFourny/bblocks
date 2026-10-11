@@ -1,6 +1,45 @@
 {
+  "name": "bblocks",
+  "version": "1.0.0",
+  "description": "A typed, framework-free SVG basic-block graph viewer",
+  "license": "MIT",
+  "main": "./dist/bblocks.js",
+  "module": "./dist/bblocks.mjs",
+  "types": "./dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/types/index.d.mts",
+        "default": "./dist/bblocks.mjs"
+      },
+      "require": {
+        "types": "./dist/types/index.d.ts",
+        "default": "./dist/bblocks.js"
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "webpack --mode production && tsc --emitDeclarationOnly && node scripts/build-types.cjs",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test test/*.test.ts",
+    "dev": "npm run build && node scripts/dev-server.cjs",
+    "prepack": "npm run build"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@dagrejs/dagre": "^1.1.5"
+  },
   "devDependencies": {
+    "@types/dagre": "^0.7.53",
+    "@types/node": "^22.15.30",
     "ts-loader": "^9.4.4",
+    "tsx": "^4.20.0",
     "typescript": "^5.1.6",
     "webpack": "^5.88.2",
     "webpack-cli": "^5.1.4"
